@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Vacuum Catalog</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0a;--card:#141414;--card2:#1c1c1c;--accent:#f0c040;--accent2:#e05a20;--green:#3ecf6e;--text:#f0ede8;--muted:#777;--border:#252525;--r:16px}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:'Manrope',sans-serif}
+.screen{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;display:none;flex-direction:column}
+.screen.active{display:flex}
+#langScreen{align-items:center;justify-content:center;padding:40px 28px;background:var(--bg)}
+.lang-logo{font-size:60px;margin-bottom:18px;text-align:center}
+.lang-title{font-family:'Bebas Neue',sans-serif;font-size:38px;letter-spacing:3px;color:var(--accent);margin-bottom:5px;text-align:center}
+.lang-sub{font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:44px;text-align:center}
+.lang-cards{width:100%;display:flex;flex-direction:column;gap:14px}
+.lang-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:22px 20px;cursor:pointer;position:relative;overflow:hidden;transition:transform .15s}
+.lang-card:active{transform:scale(.97)}
+.lang-flag{font-size:30px;margin-bottom:10px}
+.lang-name{font-family:'Bebas Neue',sans-serif;font-size:26px;margin-bottom:5px}
+.lang-hint{font-size:13px;color:#aaa}
+.lang-arrow{position:absolute;bottom:18px;right:18px;font-size:20px;color:#444}
+#splashScreen{align-items:center;justify-content:center;padding:32px 24px;background:var(--bg)}
+.splash-logo{font-family:'Bebas Neue',sans-serif;font-size:50px;letter-spacing:4px;line-height:1;text-align:center;margin-bottom:6px}
+.splash-logo em{color:var(--accent);font-style:normal}
+.splash-sub{font-size:11px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-bottom:40px;text-align:center}
+.mode-cards{width:100%;display:flex;flex-direction:column;gap:14px}
+.mode-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:22px 20px;cursor:pointer;position:relative;overflow:hidden;transition:transform .15s}
+.mode-card:active{transform:scale(.97)}
+.mode-icon{font-size:32px;margin-bottom:10px}
+.mode-label{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;margin-bottom:5px}
+.mode-label.y{color:var(--accent)}.mode-label.g{color:var(--green)}
+.mode-desc{font-size:13px;color:#aaa;line-height:1.5}
+.mode-arrow{position:absolute;bottom:18px;right:18px;font-size:20px;color:#444}
+.top-bar{position:sticky;top:0;z-index:50;background:rgba(10,10,10,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:13px 16px;gap:10px;flex-shrink:0}
+.back-btn{background:var(--card2);border:1px solid var(--border);color:var(--text);width:34px;height:34px;border-radius:50%;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.top-bar-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;color:var(--accent);flex:1}
+.lang-btn{background:var(--card2);border:1px solid var(--border);color:var(--muted);padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0}
+.filters{padding:10px 14px 6px;display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;flex-shrink:0}
+.filters::-webkit-scrollbar{display:none}
+.fbtn{background:var(--card);border:1px solid var(--border);color:var(--muted);font-family:'Manrope',sans-serif;font-size:11px;font-weight:700;padding:6px 13px;border-radius:30px;cursor:pointer;white-space:nowrap;transition:all .2s}
+.fbtn.active,.fbtn:hover{background:var(--accent);border-color:var(--accent);color:#000}
+.catalog-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:9px 11px 80px}
+.c-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:transform .2s;animation:fUp .35s ease both}
+.c-card:active{transform:scale(.97)}
+@keyframes fUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.c-img{width:100%;aspect-ratio:1;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:48px;position:relative;border-bottom:1px solid var(--border)}
+.c-tag-type{position:absolute;top:6px;left:6px;background:rgba(0,0,0,.8);color:var(--accent);font-size:8px;font-weight:700;padding:3px 7px;border-radius:6px;text-transform:uppercase}
+.c-tag-top{position:absolute;top:6px;right:6px;background:var(--accent2);color:#fff;font-size:8px;font-weight:700;padding:3px 7px;border-radius:6px}
+.c-body{padding:9px}
+.c-brand{font-size:8px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:2px}
+.c-name{font-size:12px;font-weight:700;margin-bottom:5px;line-height:1.3}
+.c-bar-row{display:flex;align-items:center;gap:4px;margin-bottom:7px}
+.c-bar-label{font-size:9px;color:var(--muted);white-space:nowrap;min-width:30px}
+.c-bar{flex:1;height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.c-bar-fill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));border-radius:2px}
+.c-price{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--accent);letter-spacing:1px}
+.c-price span{font-family:'Manrope',sans-serif;font-size:10px;color:var(--muted)}
+#quizScreen{padding-bottom:40px}
+.quiz-progress{padding:14px 18px 0;flex-shrink:0}
+.q-prog-label{font-size:10px;color:var(--muted);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:7px;display:flex;justify-content:space-between}
+.q-prog-track{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:22px}
+.q-prog-fill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--green));border-radius:2px;transition:width .4s ease}
+.q-step{padding:0 18px;animation:fUp .3s ease}
+.q-num{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:7px}
+.q-question{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px;line-height:1.2;margin-bottom:5px}
+.q-sub{font-size:12px;color:#999;line-height:1.5;margin-bottom:20px}
+.q-options{display:flex;flex-direction:column;gap:9px}
+.q-opt{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color .2s,background .2s,transform .15s}
+.q-opt:active{transform:scale(.98)}
+.q-opt.sel{border-color:var(--green);background:rgba(62,207,110,.07)}
+.q-opt-icon{font-size:24px;flex-shrink:0}
+.q-opt-text{font-size:13px;font-weight:600}
+.q-opt-sub{font-size:11px;color:var(--muted);margin-top:2px}
+#resultScreen{padding-bottom:60px}
+.res-header{padding:22px 18px 0;animation:fUp .4s ease}
+.res-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(62,207,110,.12);border:1px solid rgba(62,207,110,.3);color:var(--green);font-size:11px;font-weight:700;padding:5px 12px;border-radius:30px;margin-bottom:14px}
+.res-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px;margin-bottom:6px}
+.res-why{font-size:13px;color:#aaa;line-height:1.6;margin-bottom:22px}
+.res-main{margin:0 14px 14px;background:var(--card);border:1.5px solid var(--green);border-radius:20px;overflow:hidden;animation:fUp .5s .1s ease both;cursor:pointer}
+.res-img{height:160px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:80px;border-bottom:1px solid var(--border);position:relative}
+.res-main-lbl{position:absolute;bottom:12px;left:12px;background:var(--green);color:#000;font-size:10px;font-weight:800;padding:4px 11px;border-radius:20px;text-transform:uppercase;letter-spacing:1px}
+.res-info{padding:16px}
+.res-brand{font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px}
+.res-name{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px;margin-bottom:7px}
+.res-blurb{font-size:12px;color:#aaa;line-height:1.5;margin-bottom:12px}
+.res-price{font-family:'Bebas Neue',sans-serif;font-size:34px;color:var(--accent);letter-spacing:1px}
+.res-price-u{font-size:13px;color:var(--muted);margin-left:4px}
+.res-alts-title{padding:0 18px 9px;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--muted);text-transform:uppercase}
+.res-alts{display:flex;gap:9px;padding:0 14px 22px;overflow-x:auto;scrollbar-width:none}
+.res-alts::-webkit-scrollbar{display:none}
+.alt-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:13px;min-width:140px;cursor:pointer;transition:transform .15s;animation:fUp .4s .2s ease both}
+.alt-card:active{transform:scale(.97)}
+.alt-icon{font-size:32px;margin-bottom:7px}
+.alt-brand{font-size:8px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:2px}
+.alt-name{font-size:12px;font-weight:700;margin-bottom:5px}
+.alt-price{font-family:'Bebas Neue',sans-serif;font-size:17px;color:var(--accent)}
+.retry-btn{margin:0 14px 8px;width:calc(100% - 28px);background:transparent;border:1.5px solid var(--border);color:var(--muted);font-family:'Manrope',sans-serif;font-size:13px;font-weight:700;padding:14px;border-radius:12px;cursor:pointer}
+#detailScreen{padding-bottom:40px}
+.det-hero{background:var(--card2);width:100%;height:220px;display:flex;align-items:center;justify-content:center;font-size:100px;border-bottom:1px solid var(--border);position:relative;flex-shrink:0}
+.det-type-tag{position:absolute;bottom:12px;left:12px;background:var(--accent);color:#000;font-size:10px;font-weight:800;padding:4px 13px;border-radius:20px;text-transform:uppercase;letter-spacing:1px}
+.det-body{padding:0 16px}
+.det-basic{padding:18px 0 22px;border-bottom:1px solid var(--border)}
+.det-brand{font-size:9px;font-weight:700;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:5px}
+.det-name{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:1px;line-height:1.05;margin-bottom:9px}
+.det-desc{font-size:13px;color:#bbb;line-height:1.6;margin-bottom:16px}
+.det-price{font-family:'Bebas Neue',sans-serif;font-size:40px;color:var(--accent);letter-spacing:1px}
+.det-price-u{font-size:14px;color:var(--muted);margin-left:4px}
+.key-specs{display:flex;flex-wrap:wrap;gap:7px;margin-top:18px}
+.kspec{background:var(--card2);border:1px solid var(--border);border-radius:30px;padding:6px 13px;font-size:11px;font-weight:700}
+.kspec-lbl{color:var(--muted);margin-right:4px}
+.scroll-hint{display:flex;align-items:center;justify-content:center;gap:8px;padding:16px 0 5px;font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;font-weight:700}
+.arrow{animation:bounce 1.5s infinite;display:inline-block}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
+.det-deep{padding:0 0 20px}
+.sec-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;color:var(--accent);margin:26px 0 13px}
+.tech-cards{display:flex;flex-direction:column;gap:13px}
+.tech-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.tech-ph{width:100%;height:100px;background:linear-gradient(135deg,var(--card2),#222);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px}
+.tech-ph-icon{font-size:36px}
+.tech-ph-lbl{font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.tech-info{padding:13px 15px}
+.tech-name{font-size:13px;font-weight:800;margin-bottom:4px}
+.tech-desc{font-size:12px;color:#aaa;line-height:1.55}
+.specs-tbl{width:100%;border-collapse:collapse}
+.specs-tbl tr{border-bottom:1px solid var(--border)}
+.specs-tbl tr:last-child{border-bottom:none}
+.specs-tbl td{padding:11px 0;font-size:12px}
+.specs-tbl td:first-child{color:var(--muted);width:50%}
+.specs-tbl td:last-child{font-weight:700;text-align:right}
+.feat-list{list-style:none;display:flex;flex-direction:column;gap:9px}
+.feat-list li{display:flex;align-items:flex-start;gap:11px;font-size:12px;color:#ccc;line-height:1.5}
+.feat-list li::before{content:"\2713";color:var(--green);font-weight:800;width:20px;height:20px;background:rgba(62,207,110,.1);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;margin-top:1px}
+</style>
+</head>
+<body>
+
+<div id="langScreen" class="screen active">
+  <div class="lang-logo">&#x1F9F9;</div>
+  <div class="lang-title">VACUUM</div>
+  <div class="lang-sub">CATALOG &middot; &#x05E7;&#x05D8;&#x05DC;&#x05D5;&#x05D2;</div>
+  <div class="lang-cards">
+    <div class="lang-card" onclick="setLang('he')">
+      <div class="lang-flag">&#x1F1EE;&#x1F1F1;</div>
+      <div class="lang-name" style="color:var(--accent);direction:rtl">&#x05E2;&#x05D1;&#x05E8;&#x05D9;&#x05EA;</div>
+      <div class="lang-hint" style="direction:rtl">&#x05D4;&#x05DE;&#x05E9;&#x05DA; &#x05D1;&#x05E2;&#x05D1;&#x05E8;&#x05D9;&#x05EA;</div>
+      <div class="lang-arrow">&larr;</div>
+    </div>
+    <div class="lang-card" onclick="setLang('ru')">
+      <div class="lang-flag">&#x1F1F7;&#x1F1FA;</div>
+      <div class="lang-name" style="color:var(--green)">&#x0420;&#x0423;&#x0421;&#x0421;&#x041A;&#x0418;&#x0419;</div>
+      <div class="lang-hint">&#x041F;&#x0440;&#x043E;&#x0434;&#x043E;&#x043B;&#x0436;&#x0438;&#x0442;&#x044C; &#x043D;&#x0430; &#x0440;&#x0443;&#x0441;&#x0441;&#x043A;&#x043E;&#x043C;</div>
+      <div class="lang-arrow">&rarr;</div>
+    </div>
+  </div>
+</div>
+
+<div id="splashScreen" class="screen">
+  <div class="splash-logo">VACUUM<em>S</em></div>
+  <div id="splashSub" class="splash-sub">Catalog</div>
+  <div class="mode-cards">
+    <div class="mode-card" onclick="goScreen('catalogScreen');renderCatalog()">
+      <div class="mode-icon">&#x1F4CB;</div>
+      <div class="mode-label y" id="lblCatalog">CATALOG</div>
+      <div class="mode-desc" id="dscCatalog">All models</div>
+      <div class="mode-arrow">&rarr;</div>
+    </div>
+    <div class="mode-card" onclick="startQuiz()">
+      <div class="mode-icon">&#x1F3AF;</div>
+      <div class="mode-label g" id="lblQuiz">FIND FOR ME</div>
+      <div class="mode-desc" id="dscQuiz">4 questions</div>
+      <div class="mode-arrow">&rarr;</div>
+    </div>
+  </div>
+</div>
+
+<div id="catalogScreen" class="screen">
+  <div class="top-bar">
+    <div class="back-btn" onclick="goScreen('splashScreen')">&#8592;</div>
+    <div class="top-bar-title" id="catTitle">CATALOG</div>
+    <div class="lang-btn" onclick="goScreen('langScreen')">&#x1F310;</div>
+  </div>
+  <div class="filters" id="filterBar"></div>
+  <div class="catalog-grid" id="catalogGrid"></div>
+</div>
+
+<div id="quizScreen" class="screen">
+  <div class="top-bar">
+    <div class="back-btn" onclick="goScreen('splashScreen')">&#8592;</div>
+    <div class="top-bar-title" id="quizTitle">QUIZ</div>
+    <div class="lang-btn" onclick="goScreen('langScreen')">&#x1F310;</div>
+  </div>
+  <div class="quiz-progress">
+    <div class="q-prog-label"><span id="progLbl">PROGRESS</span><span id="progTxt">1/4</span></div>
+    <div class="q-prog-track"><div class="q-prog-fill" id="progFill" style="width:25%"></div></div>
+  </div>
+  <div id="quizStep" class="q-step"></div>
+</div>
+
+<div id="resultScreen" class="screen">
+  <div class="top-bar">
+    <div class="back-btn" onclick="goScreen('splashScreen')">&#8592;</div>
+    <div class="top-bar-title" id="resTitle">RESULT</div>
+    <div class="lang-btn" onclick="goScreen('langScreen')">&#x1F310;</div>
+  </div>
+  <div class="res-header">
+    <div class="res-badge" id="resBadge">&#x2756; Result</div>
+    <div class="res-title" id="resName"></div>
+    <div class="res-why" id="resWhy"></div>
+  </div>
+  <div class="res-main" id="resMain"></div>
+  <div class="res-alts-title" id="alsoTitle">ALSO CONSIDER</div>
+  <div class="res-alts" id="resAlts"></div>
+  <button class="retry-btn" id="retryBtn" onclick="startQuiz()">Retry</button>
+</div>
+
+<div id="detailScreen" class="screen">
+  <div class="top-bar">
+    <div class="back-btn" id="detBack">&#8592;</div>
+    <div class="top-bar-title" id="detTopName"></div>
+  </div>
+  <div class="det-hero">
+    <span id="detEmoji"></span>
+    <div class="det-type-tag" id="detTypeTag"></div>
+  </div>
+  <div class="det-body">
+    <div class="det-basic" id="detBasic"></div>
+    <div class="scroll-hint" id="scrollHint">Scroll <span class="arrow">&#8595;</span></div>
+    <div class="det-deep" id="detDeep"></div>
+  </div>
+</div>
+
+<script>
+var L="ru", CF="all", QA={}, QS=0, FROM="catalogScreen";
+
+var UI={
+ru:{dir:"ltr",splashSub:"Каталог магазина · 23 модели",lblCatalog:"СМОТРЕТЬ КАТАЛОГ",dscCatalog:"Все 23 модели с ценами и технологиями.",lblQuiz:"ПОДОБРАТЬ ДЛЯ МЕНЯ",dscQuiz:"4 вопроса — рекомендация из ассортимента.",catTitle:"КАТАЛОГ",quizTitle:"ПОДБОР",resTitle:"РЕКОМЕНДАЦИЯ",resBadge:"❖ Подобрано для вас",alsoTitle:"ТАКЖЕ РАССМОТРИТЕ",retry:"↺ Пройти заново",yourChoice:"Ваш выбор",scrollHint:"Листайте вниз",howWorks:"КАК ЭТО РАБОТАЕТ",allSpecs:"ХАРАКТЕРИСТИКИ",featTitle:"ОСОБЕННОСТИ",progLbl:"ПРОГРЕСС",qLbl:"ВОПРОС",fAll:"Все (23)",fRob:"Роботы",fWet:"Моющие",fCord:"Беспроводные",sType:"Тип",sSuc:"Всасывание",sWt:"Вес",sFlt:"Фильтр",sNs:"Шум",sRt:"Батарея",askSell:"Уточнить у продавца",
+forArea:"Для",bestIn:"лучший",inBudget:"в вашем бюджете.",areaS:"небольшой площади",areaM:"стандартной квартиры",areaL:"большого дома",algN:"",algL:" с хорошей фильтрацией",algS:" с максимальной фильтрацией",tR:"робот",tW:"моющий",tC:"беспроводной",
+tLbl:{"робот":"робот","моющий":"моющий","беспроводной":"беспроводной"},
+Q:[
+{id:"type",q:"КАК ХОТИТЕ УБИРАТЬСЯ?",sub:"Это самый важный выбор.",opts:[{ic:"🤖",t:"Робот — сам уберётся",s:"Без участия",v:3},{ic:"💧",t:"Мойка пола",s:"Влажная + сухая",v:4},{ic:"🔋",t:"Беспроводной",s:"Лёгкий, везде",v:2}]},
+{id:"area",q:"ПЛОЩАДЬ ДОМА?",sub:"Влияет на мощность.",opts:[{ic:"🏠",t:"До 70 м²",s:"1–2 комнаты",v:1},{ic:"🏡",t:"70–130 м²",s:"Стандартная квартира",v:2},{ic:"🏘️",t:"Больше 130 м²",s:"Большой дом",v:3}]},
+{id:"allergy",q:"ЕСТЬ АЛЛЕРГИЯ?",sub:"Пыль, шерсть, клещи.",opts:[{ic:"😊",t:"Нет",s:"Обычная чувствительность",v:1},{ic:"🤧",t:"Есть немного",s:"Иногда реагирую",v:2},{ic:"😷",t:"Сильная",s:"Нужна макс. фильтрация",v:3}]},
+{id:"budget",q:"БЮДЖЕТ?",sub:"Шекели.",opts:[{ic:"💵",t:"До 1700 ₪",s:"Разумная цена",v:1},{ic:"💴",t:"1700–2500 ₪",s:"Хорошее качество",v:2},{ic:"💶",t:"2500–3600 ₪",s:"Премиум",v:3},{ic:"💷",t:"3600+ ₪",s:"Лучшее",v:4}]}
+]},
+he:{dir:"rtl",splashSub:"קטלוג החנות · 23 דגמים",lblCatalog:"לצפייה בקטלוג",dscCatalog:"כל 23 הדגמים עם מחירים וטכנולוגיות.",lblQuiz:"מצא לי את המתאים",dscQuiz:"4 שאלות — המלצה אישית.",catTitle:"קטלוג",quizTitle:"התאמה אישית",resTitle:"המלצה",resBadge:"❖ נבחר עבורך אישית",alsoTitle:"שקול גם",retry:"↺ התחל מחדש",yourChoice:"הבחירה שלך",scrollHint:"גלול למטה",howWorks:"איך זה עובד",allSpecs:"מפרט טכני",featTitle:"יתרונות",progLbl:"התקדמות",qLbl:"שאלה",fAll:"הכל (23)",fRob:"רובוטים",fWet:"שוטפים",fCord:"אלחוטיים",sType:"סוג",sSuc:"עוצמת שאיבה",sWt:"משקל",sFlt:"סינון",sNs:"רעש",sRt:"סוללה",askSell:"פנה למוכר לפרטי מחיר",
+forArea:"עבור",bestIn:"הטוב ביותר",inBudget:"בתקציב שלך.",areaS:"שטח קטן",areaM:"דירה רגילה",areaL:"בית גדול",algN:"",algL:" עם סינון טוב",algS:" עם סינון HEPA מקסימלי",tR:"רובוט",tW:"שוטף",tC:"אלחוטי",
+tLbl:{"רובוט":"רובוט","שוטף":"שוטף","אלחוטי":"אלחוטי","робот":"רובוט","моющий":"שוטף","беспроводной":"אלחוטי"},
+Q:[
+{id:"type",q:"איך תרצה לנקות?",sub:"זו הבחירה החשובה ביותר.",opts:[{ic:"🤖",t:"רובוט — ינקה לבד",s:"בלי מאמץ",v:3},{ic:"💧",t:"שטיפת רצפה",s:"יבש + רטוב",v:4},{ic:"🔋",t:"אלחוטי",s:"קל, מהיר",v:2}]},
+{id:"area",q:"שטח הבית?",sub:"משפיע על סוג ועוצמה.",opts:[{ic:"🏠",t:'עד 70 מ"ר',s:"1–2 חדרים",v:1},{ic:"🏡",t:'70–130 מ"ר',s:"דירה רגילה",v:2},{ic:"🏘️",t:'מעל 130 מ"ר',s:"בית גדול",v:3}]},
+{id:"allergy",q:"יש אלרגיה?",sub:"אבק, שיער חיות, קרדיות.",opts:[{ic:"😊",t:"לא",s:"רגישות רגילה",v:1},{ic:"🤧",t:"קצת",s:"לפעמים מגיב",v:2},{ic:"😷",t:"חזקה",s:"צריך סינון מקסימלי",v:3}]},
+{id:"budget",q:"תקציב?",sub:"שקלים.",opts:[{ic:"💵",t:"עד 1700 ₪",s:"מחיר סביר",v:1},{ic:"💴",t:"1700–2500 ₪",s:"איכות טובה",v:2},{ic:"💶",t:"2500–3600 ₪",s:"פרימיום",v:3},{ic:"💷",t:"3600+ ₪",s:"הכי טוב",v:4}]}
+]}
+};
+
+var PRODS=[
+{id:1,brand:"Roborock",name:"Saros 20 Complete",e:"🟥",type:"робот",price:4319,suc:"36 000 Pa",pct:100,wt:"4.5 kg",ns:"~65 dB",flt:"Auto",rt:"—",best:true,sA:3,sAl:3,sT:3,sB:4,
+desc:{ru:"Абсолютный флагман 2026. 36 000 Па, пороги до 88 мм, StarSight 2.0, Matter/HomeKit.",he:"הדגל המוחלט 2026. 36,000 פה, מכשולים עד 88 ממ, StarSight 2.0, Matter/HomeKit."},
+deep:{ru:"Saros 20 — вершина Roborock. AdaptiLift 3.0: три независимые колёсные группы перешагивают порог. Корпус 79 мм, поддержка Matter нативно.",he:"Saros 20 — פסגת Roborock. AdaptiLift 3.0: שלושה קבוצות גלגלים עצמאיות עוברות מעל המפתן. גוף 79 ממ, תמיכת Matter מקורית."},
+feat:{ru:["36 000 Па HyperForce","AdaptiLift 3.0 — пороги 88 мм","StarSight 2.0 без башни","Мытьё моп 100°C","Matter/HomeKit нативно","DuoDivide — 0% запутывания"],he:["36,000 פה HyperForce","AdaptiLift 3.0 — מכשולים 88 ממ","StarSight 2.0 ללא מגדל","Matter/HomeKit מקורי","DuoDivide — 0% סבכים","AdaptiLift 3.0"]},
+specs:[["Suction / שאיבה","36 000 Pa"],["Height / גובה","79 mm"],["Threshold / מכשול","88 mm"],["Mop wash / שטיפת מגב","100°C"],["Navigation","StarSight 2.0"],["Smart home","Matter, Alexa, Google"]],
+techs:[{ic:"⚡",n:{ru:"36 000 Па HyperForce",he:"36,000 פה HyperForce"},d:{ru:"На 60% мощнее Saros 10R — втягивает шерсть из глубины ковра.",he:"60% חזק יותר מ-Saros 10R — שואב שיער מעומק השטיח."}},{ic:"🦾",n:{ru:"AdaptiLift 3.0",he:"AdaptiLift 3.0"},d:{ru:"Три мотора управляют колёсными группами независимо — корпус перешагивает порог как живое существо.",he:"שלושה מנועים שולטים בקבוצות גלגלים בנפרד."}}]},
+{id:2,brand:"Roborock",name:"Saros 20 Sonic",e:"🟧",type:"робот",price:4399,suc:"36 000 Pa",pct:100,wt:"4.3 kg",ns:"~63 dB",flt:"Auto",rt:"—",best:false,sA:3,sAl:3,sT:3,sB:4,
+desc:{ru:"Saros 20 + VibraRise 5.0: 4000 вибраций/мин, 14 Н — идеален для твёрдых полов.",he:"Saros 20 + VibraRise 5.0: 4000 רטט/דקה, 14 ניוטון."},
+deep:{ru:"VibraRise 5.0 — 4000 движений в минуту при прижиме 14 Н. Идеально для кухни с загрязнениями.",he:"VibraRise 5.0 — 4000 תנועות לדקה בלחץ 14 ניוטון. אידיאלי למטבח."},
+feat:{ru:["VibraRise 5.0 — 4000 виб/мин","Прижим 14 Н","36 000 Па","RockDock кипяток","Пороги 88 мм","DuoDivide"],he:["VibraRise 5.0 — 4000 רטט/דקה","לחץ 14 ניוטון","36,000 פה","RockDock מים רותחים","מכשולים 88 ממ","DuoDivide"]},
+specs:[["Suction","36 000 Pa"],["Mop","VibraRise 5.0"],["Vibrations","4000/min"],["Pressure","14 N"],["Wash","boiling"],["Threshold","88 mm"]],
+techs:[{ic:"〰️",n:{ru:"VibraRise 5.0",he:"VibraRise 5.0"},d:{ru:"4000 микро-движений/мин при давлении 14 Н — как интенсивная шваброка.",he:"4000 מיקרו-תנועות/דקה בלחץ 14 ניוטון."}}]},
+{id:3,brand:"Roborock",name:"Saros 10R",e:"🔵",type:"робот",price:3549,suc:"22 000 Pa",pct:62,wt:"4.1 kg",ns:"62 dB",flt:"Auto",rt:"~180 min",best:true,sA:2,sAl:2,sT:3,sB:3,
+desc:{ru:"Лучший обход препятствий 2025. 79 мм, FlexiArm в углы, 6400 мАч — 180 мин.",he:"הימנעות הטובה ביותר 2025. 79 ממ, FlexiArm לפינות, 180 דק."},
+deep:{ru:"StarSight 2.0 распознаёт 108 типов препятствий. VertiBeam лазер огибает провода. FlexiArm выдвигает щётку/моп в углы.",he:"StarSight 2.0 מזהה 108 סוגי מכשולים. לייזר VertiBeam עוקף כבלים. FlexiArm דוחף מברשת/מגב לפינות."},
+feat:{ru:["22 000 Па HyperForce","FlexiArm — в углы","108 типов препятствий","StarSight 2.0","6400 мАч / 180 мин","Горячая вода 70°C"],he:["22,000 פה","FlexiArm — לפינות","108 סוגי מכשולים","StarSight 2.0","6400 mAh / 180 דק","70°C"]},
+specs:[["Suction","22 000 Pa"],["Height","79 mm"],["Battery","6400 mAh"],["Runtime","~180 min"],["Navigation","StarSight 2.0"],["Hot water","70°C"]],
+techs:[{ic:"👁️",n:{ru:"StarSight 2.0",he:"StarSight 2.0"},d:{ru:"108 категорий препятствий: кабели, носки, игрушки — всё обходит.",he:"108 קטגוריות מכשולים: כבלים, גרבייים, צעצועים — עוקף הכל."}}]},
+{id:4,brand:"Roborock",name:"Q Revo Edge 2 Pro",e:"🟢",type:"робот",price:3049,suc:"18 500 Pa",pct:52,wt:"3.9 kg",ns:"65 dB",flt:"Auto",rt:"~180 min",best:false,sA:2,sAl:2,sT:3,sB:3,
+desc:{ru:"FlexiArm Arc, горячая вода 75°C, DuoDivide 0% запутывания. Надёжный флагман.",he:"FlexiArm Arc, 75°C, DuoDivide 0% סבכים. דגל אמין."},
+deep:{ru:"FlexiArm Arc огибает плинтусы. DuoDivide сертифицирован SGS: 0% запутывания. База: горячая вода + сушка.",he:"FlexiArm Arc חובק את השפות. DuoDivide: 0% סבכים. בסיס: מים חמים + ייבוש."},
+feat:{ru:["18 500 Па","FlexiArm Arc","DuoDivide — 0%","75°C горячая вода","Авто-сброс + сушка","LiDAR + RGB"],he:["18,500 פה","FlexiArm Arc","DuoDivide — 0%","75°C","DuoDivide","LiDAR + RGB"]},
+specs:[["Suction","18 500 Pa"],["Brush","FlexiArm Arc"],["Hot water","75°C"],["Auto-empty","Yes"],["Navigation","LiDAR + RGB"],["Compat.","Alexa, Google"]],
+techs:[{ic:"0️⃣",n:{ru:"DuoDivide 0%",he:"DuoDivide 0%"},d:{ru:"Спиральные рёбра направляют волосы к каналу до намотки. Сертификат SGS.",he:"צלעות ספירליות מכוונות שיער לתעלה לפני סבך. תעודת SGS."}}]},
+{id:5,brand:"Mova",name:"Z60 Ultra Roller",e:"🔷",type:"робот",price:3599,suc:"28 000 Pa",pct:78,wt:"4.2 kg",ns:"~64 dB",flt:"Auto",rt:"—",best:false,sA:3,sAl:2,sT:3,sB:3,
+desc:{ru:"28 000 Па + HydroForce 12 сопел. AutoShield на ковре. Пороги 80 мм.",he:"28,000 פה + HydroForce 12 זרבוביות. AutoShield על שטיח. מכשולים 80 ממ."},
+deep:{ru:"HydroForce: 12 сопел непрерывно ополаскивают ролик. AutoShield изолирует ролик на ковре. StepMaster 2.0 — пороги 80 мм.",he:"HydroForce: 12 זרבוביות מדיחות את הגליל ברציפות. AutoShield מבדד על שטיח."},
+feat:{ru:["28 000 Па","HydroForce — 12 сопел","AutoShield ковёр","StepMaster 2.0 — 80 мм","MaxiReach","DuoBrush"],he:["28,000 פה","HydroForce 12 זרבוביות","AutoShield","StepMaster 2.0 — 80 ממ","MaxiReach","DuoBrush"]},
+specs:[["Suction","28 000 Pa"],["Mop","HydroForce roller"],["Nozzles","12"],["Threshold","80 mm"],["Auto-empty","Yes"],["Navigation","FlexScope LiDAR"]],
+techs:[{ic:"💦",n:{ru:"HydroForce 12 сопел",he:"HydroForce 12 זרבוביות"},d:{ru:"12 сопел равномерно подают чистую воду и отжимают грязную — ролик всегда свежий.",he:"12 זרבוביות מספקות מים נקיים וסוחטות את המלוכלכים."}}]},
+{id:6,brand:"Mova",name:"S70 Roller",e:"🔹",type:"робот",price:2579,suc:"28 000 Pa",pct:78,wt:"3.8 kg",ns:"~65 dB",flt:"Auto",rt:"—",best:false,sA:2,sAl:1,sT:3,sB:2,
+desc:{ru:"HydroForce без башни (90 мм), 80°C мытьё, мешок 3.2 л / 100 дней.",he:"HydroForce ללא מגדל (90 ממ), 80°C, שקית 3.2 ל' / 100 יום."},
+deep:{ru:"S70 Roller — роликовый мойщик по доступной цене. dToF-сенсор встроен. База: 80°C, 1200 м² покрытие.",he:"S70 Roller — שוטף גליל במחיר נגיש. בסיס: 80°C, כיסוי 1200 מ"ר."},
+feat:{ru:["28 000 Па","90 мм без башни","Ролик 27 см","80°C мытьё","Мешок 3.2 л","MaxiReach"],he:["28,000 פה","90 ממ ללא מגדל","גליל 27 סם","80°C","שקית 3.2 ל'","MaxiReach"]},
+specs:[["Suction","28 000 Pa"],["Height","90 mm"],["Roller","27 cm"],["Wash","80°C"],["Bag","3.2 L / 100d"],["Coverage","1200 m²"]],
+techs:[{ic:"📏",n:{ru:"Ролик 27 см",he:"גליל 27 סם"},d:{ru:"Широкий ролик покрывает максимальную площадь за один проход.",he:"גליל רחב מכסה שטח מקסימלי במעבר אחד."}}]},
+{id:7,brand:"Mova",name:"V50 Ultra Complete",e:"🟦",type:"робот",price:3099,suc:"24 000 Pa",pct:67,wt:"4.0 kg",ns:"~64 dB",flt:"Auto",rt:"—",best:false,sA:2,sAl:2,sT:3,sB:3,
+desc:{ru:"24 000 Па, DuoSolution тёплая вода + автодозатор, RoboSwing в углы.",he:"24,000 פה, DuoSolution + מדוון אוטו., RoboSwing."},
+deep:{ru:"DuoSolution нагревает воду и автоматически добавляет моющее при сильном загрязнении.",he:"DuoSolution מחמם מים ומוסיף חומר ניקוי אוטומטית."},
+feat:{ru:["24 000 Па","DuoSolution + автодозатор","RoboSwing","Triple LiDAR","Авто-сброс","App"],he:["24,000 פה","DuoSolution","RoboSwing","Triple LiDAR","פריקה אוטו.","App"]},
+specs:[["Suction","24 000 Pa"],["Mop","DuoSolution"],["Water","warm + soap"],["Navigation","Triple LiDAR"],["Auto-empty","Yes"],["Drying","hot air"]],
+techs:[{ic:"🧴",n:{ru:"DuoSolution автодозатор",he:"DuoSolution מדוון אוטו."},d:{ru:"Сенсор определяет загрязнение и дозирует нужное количество моющего.",he:"חיישן מזהה לכלוך ומוסיף את הכמות הנכונה של חומר ניקוי."}}]},
+{id:8,brand:"Dreame",name:"L40 Ultra AE",e:"🟪",type:"робот",price:0,suc:"19 000 Pa",pct:53,wt:"4.1 kg",ns:"~65 dB",flt:"Auto",rt:"—",best:true,sA:3,sAl:3,sT:3,sB:3,
+desc:{ru:"Лучшая ценность года. 19 000 Па, MopExtend до стены, TriCut 3.0.",he:"ערך השנה הטוב ביותר. 19,000 פה, MopExtend, TriCut 3.0."},
+deep:{ru:"Топ-3 роботов 2025 по Vacuum Wars. MopExtend: боковой моп до стены. TriCut 3.0 режет волосы до намотки.",he:"טופ-3 רובוטים 2025. MopExtend: מגב צדדי עד הקיר. TriCut 3.0 חותך שיער."},
+feat:{ru:["19 000 Па","MopExtend — до стены","TriCut 3.0","PowerDock 100 дней","75°C","3DAdapt"],he:["19,000 פה","MopExtend","ניקוי עצמי 100 יום","TriCut 3.0","75°C","3DAdapt"]},
+specs:[["Suction","19 000 Pa"],["Navigation","3DAdapt"],["Brush","TriCut 3.0"],["Battery","5200 mAh"],["Auto-bag","~100 days"],["Hot water","75°C"]],
+techs:[{ic:"✂️",n:{ru:"TriCut 3.0",he:"TriCut 3.0"},d:{ru:"Лезвие режет волосы в трёх точках по длине щётки до намотки.",he:"להב חותך שיער בשלוש נקודות לפני סבך."}}]},
+{id:9,brand:"Dreame",name:"X50 Ultra",e:"🔶",type:"робот",price:2820,suc:"20 000 Pa",pct:56,wt:"4.2 kg",ns:"~65 dB",flt:"Auto",rt:"—",best:false,sA:3,sAl:2,sT:3,sB:3,
+desc:{ru:"Первый в мире с роботизированными ногами ProLeap. Пороги до 6 см.",he:"ראשון בעולם עם רגליים ProLeap. מכשולים עד 6 סם."},
+deep:{ru:"ProLeap: 3 моторизованных ноги перешагивают пороги до 60 мм. VersaLift — складной LiDAR.",he:"ProLeap: 3 רגליים ממונעות עוברות מכשולים עד 60 ממ. VersaLift — LiDAR מתקפל."},
+feat:{ru:["ProLeap ноги","Пороги 60 мм!","VersaLift LiDAR","20 000 Па","PowerDock","DuoBrush"],he:["רגליים ProLeap","מכשולים 60 ממ!","VersaLift LiDAR","20,000 פה","PowerDock","DuoBrush"]},
+specs:[["Suction","20 000 Pa"],["Threshold","60 mm"],["Legs","ProLeap motors"],["LiDAR","VersaLift fold"],["Battery","5200 mAh"],["Auto-bag","100 days"]],
+techs:[{ic:"🦵",n:{ru:"ProLeap Robotic Legs",he:"רגליים ProLeap"},d:{ru:"3 мотора выдвигают ноги — корпус перешагивает порог. Первый серийный робот в мире.",he:"3 מנועים פורשים רגליים — הגוף עובר מעל המפתן."}}]},
+{id:10,brand:"Dreame",name:"X60 Ultra Complete",e:"⬛",type:"робот",price:3800,suc:"30 000 Pa",pct:84,wt:"4.4 kg",ns:"~65 dB",flt:"Auto",rt:"—",best:false,sA:3,sAl:3,sT:3,sB:4,
+desc:{ru:"Флагман Dreame 2026. 30 000 Па, Proactive AI Vision, 3.13".",he:"דגל Dreame 2026. 30,000 פה, AI Vision יזום."},
+deep:{ru:"Proactive AI Vision сканирует комнату до начала уборки. 30 000 Па — одни из мощнейших.",he:"AI Vision יזום סורקת את החדר לפני הניקוי. 30,000 פה — מהעוזקים ביותר."},
+feat:{ru:["30 000 Па","Proactive AI Vision","3.13" плоский","Авто-смена моп","PowerDock 100 дней","Складной LiDAR"],he:["30,000 פה","AI Vision יזום","3.13" שטוח","החלפת מגב אוטומטית","PowerDock 100 יום","LiDAR מתקפל"]},
+specs:[["Suction","30 000 Pa"],["Height","79.6 mm"],["Navigation","Proactive AI"],["Auto mop swap","Yes"],["Auto-bag","100 days"],["LiDAR","folding"]],
+techs:[{ic:"🧠",n:{ru:"Proactive AI Vision",he:"AI Vision יזום"},d:{ru:"Камера сканирует комнату заранее — оптимальный маршрут строится до старта.",he:"המצלמה סורקת מראש — מסלול אופטימלי נבנה לפני ההתחלה."}}]},
+{id:11,brand:"Dreame",name:"Aqua10 Ultra Roller",e:"🌊",type:"робот",price:2959,suc:"30 000 Pa",pct:84,wt:"4.3 kg",ns:"~64 dB",flt:"Auto",rt:"—",best:false,sA:3,sAl:2,sT:3,sB:3,
+desc:{ru:"AquaRoll непрерывная чистая вода + 30 000 Па. AutoSeal защита ковра.",he:"AquaRoll מים נקיים רצופים + 30,000 פה."},
+deep:{ru:"AquaRoll непрерывно ополаскивает ролик — никаких разводов. AutoSeal закрывает ролик на ковре.",he:"AquaRoll מדיח את הגליל ברציפות. AutoSeal סוגר על שטיח."},
+feat:{ru:["AquaRoll — чистая вода","30 000 Па","AutoSeal ковёр","ProLeap 60 мм","PowerDock 100°C","DuoBrush"],he:["AquaRoll","30,000 פה","AutoSeal","ProLeap 60 ממ","PowerDock 100°C","DuoBrush"]},
+specs:[["Suction","30 000 Pa"],["Mop","AquaRoll"],["Threshold","60 mm"],["Wash","100°C"],["Auto-bag","100 days"],["Navigation","OmniSight 2.0"]],
+techs:[{ic:"🌊",n:{ru:"AquaRoll Continuous",he:"AquaRoll רצוף"},d:{ru:"Ролик смачивается чистой водой и отжимает грязную постоянно — как промышленная швабра.",he:"הגליל מורטב במים נקיים ומיד סוחט את המלוכלכים."}}]},
+{id:12,brand:"Roborock",name:"F25 ACE PRO",e:"🟥",type:"моющий",price:2249,suc:"25 000 Pa",pct:70,wt:"5.8 kg",ns:"74 dB",flt:"Tank",rt:"30-60 min",best:true,sA:2,sAl:2,sT:4,sB:3,
+desc:{ru:"25 000 Па + JetFoaming 167 млн пузырьков. Флагман мойщиков.",he:"25,000 פה + JetFoaming 167 מיליון בועות."},
+deep:{ru:"JetFoaming создаёт 167 млн микропузырьков — пена проникает глубже в загрязнение. Тихая сушка 48 дБ.",he:"JetFoaming: 167 מיליון מיקרו-בועות חודרות לתוך הלכלוך. ייבוש שקט 48 דצב."},
+feat:{ru:["25 000 Па — рекорд","JetFoaming 167M пузырьков","Бак 1 л","AUTO/MAX/ECO/Sponge","Автодозатор","Тихая сушка 48 дБ"],he:["25,000 פה — שיא","JetFoaming 167M בועות","מיכל 1 ל'","AUTO/MAX/ECO/Sponge","מדוון אוטו.","ייבוש שקט 48 דצב"]},
+specs:[["Suction","25 000 Pa"],["Foam","JetFoaming"],["Clean tank","1000 ml"],["Dirty tank","720 ml"],["Runtime","30–60 min"],["Dry noise","48 dB"]],
+techs:[{ic:"🫧",n:{ru:"JetFoaming Technology",he:"טכנולוגיית JetFoaming"},d:{ru:"167 млн микропузырьков растворяют жир, кофе, соусы там, куда вода не доберётся.",he:"167 מיליון בועות ממיסות שומן, קפה ורטבים."}}]},
+{id:13,brand:"Roborock",name:"F25 ACE Combo",e:"🟥",type:"моющий",price:1990,suc:"20 000 Pa",pct:56,wt:"5.5 kg",ns:"74 dB",flt:"Tank",rt:"60 min",best:false,sA:2,sAl:1,sT:4,sB:2,
+desc:{ru:"5-в-1: мойщик + набор насадок для дивана, ковра, труднодоступных мест.",he:"5 ב-1: שוטף + ערכת ראשים לספה, שטיח ומקומות קשים."},
+deep:{ru:"5 насадок: мойка пола, ковёр, диван, гибкий шланг, угол. SlideTech 2.0 — поворот 70°.",he:"5 ראשים: רצפה, שטיח, ספה, צינור גמיש, פינה. SlideTech 2.0 — 70°."},
+feat:{ru:["20 000 Па + 5 насадок","Мойка + сухой пылесос","SlideTech 2.0 70°","60 мин","Авто-самоочистка","Горячая база"],he:["20,000 פה + 5 ראשים","שטיפה + שאיבה יבשה","SlideTech 2.0 70°","60 דק","ניקוי עצמי","בסיס חם"]},
+specs:[["Suction","20 000 Pa"],["Attachments","5"],["Swivel","70°"],["Runtime","60 min"],["Self-clean","hot"],["Weight","5.5 kg"]],
+techs:[{ic:"🔄",n:{ru:"5-в-1",he:"5 ב-1"},d:{ru:"Одним прибором убираете пол влажно, диван, ковёр, углы — без смены прибора.",he:"מכשיר אחד לרצפה, ספה, שטיח ופינות."}}]},
+{id:14,brand:"Roborock",name:"F25 Ultra",e:"🟥",type:"моющий",price:2099,suc:"20 000 Pa",pct:56,wt:"5.6 kg",ns:"74 dB",flt:"Tank",rt:"60 min",best:false,sA:2,sAl:3,sT:4,sB:2,
+desc:{ru:"Пар 180°C + горячая вода 85°C. Синяя LED подсветка грязи. Без химии.",he:"קיטור 180°C + מים חמים 85°C. LED כחול. בלי כימיקלים."},
+deep:{ru:"Пар 180°C убивает 99.99% бактерий без химии. Синий LED показывает невидимую грязь на плитке.",he:"קיטור 180°C הורג 99.99% חיידקים ללא כימיקלים. LED כחול מגלה לכלוך בלתי נראה."},
+feat:{ru:["Пар 180°C — без химии","85°C горячая вода","Синяя LED","Самоочистка 90°C","180° укладка","AI-колёса"],he:["קיטור 180°C","85°C","LED כחול","ניקוי עצמי 90°C","שכיבה 180°","AI גלגלים"]},
+specs:[["Suction","20 000 Pa"],["Steam","180°C"],["Hot water","85°C"],["Self-clean","90°C"],["LED","blue"],["Lay-flat","180°"]],
+techs:[{ic:"♨️",n:{ru:"Пар 180°C",he:"קיטור 180°C"},d:{ru:"Уничтожает бактерии, плесень, клещей без химии. 99.99% стерильность.",he:"הורג חיידקים, עובש וקרדיות ללא כימיקלים."}}]},
+{id:15,brand:"Roborock",name:"F25 ACE (CE)",e:"🟥",type:"моющий",price:1270,suc:"20 000 Pa",pct:56,wt:"5.3 kg",ns:"74 dB",flt:"Tank",rt:"60 min",best:false,sA:1,sAl:1,sT:4,sB:1,
+desc:{ru:"Базовая F25 ACE. 20 000 Па, горячая самоочистка, 60 мин, CE.",he:"גרסה בסיסית. 20,000 פה, ניקוי עצמי, 60 דק."},
+deep:{ru:"Надёжный Roborock без доплаты за Pro. JawScraper без разводов. 410 м² за зарядку.",he:"Roborock אמין ללא תוספת. JawScraper ללא סימנים. 410 מ"ר לטעינה."},
+feat:{ru:["20 000 Па","Горячая самоочистка","60 мин / 410 м²","JawScraper","SlideTech 2.0","CE"],he:["20,000 פה","ניקוי עצמי חם","60 דק / 410 מ"ר","JawScraper","SlideTech 2.0","CE"]},
+specs:[["Suction","20 000 Pa"],["Runtime","60 min"],["Coverage","410 m²"],["Self-clean","hot"],["Cert","CE"],["Weight","5.3 kg"]],
+techs:[{ic:"🪟",n:{ru:"JawScraper",he:"JawScraper"},d:{ru:"Скребок убирает излишки воды — пол сухой и матовый после уборки.",he:"הגרדן מסיר עודפי מים — הרצפה יבשה לאחר הניקוי."}}]},
+{id:16,brand:"Dreame",name:"H60 GT",e:"💜",type:"моющий",price:1149,suc:"~20 000 Pa",pct:56,wt:"4.8 kg",ns:"72 dB",flt:"Tank",rt:"45 min",best:false,sA:1,sAl:1,sT:4,sB:1,
+desc:{ru:"Доступный мойщик. Горячая вода, авто-слив, 180° укладка.",he:"שוטף נגיש. מים חמים, ניקוז אוטו., שכיבה 180°."},
+deep:{ru:"H60 GT — базовый мойщик. Горячая вода разжижает грязь, база сливает грязную воду.",he:"H60 GT — שוטף בסיסי. מים חמים ממיסים לכלוך."},
+feat:{ru:["Горячая вода","Авто-слив","TangleFree","180° укладка","Быстрая сушка","Умный датчик"],he:["מים חמים","ניקוז אוטו.","TangleFree","שכיבה 180°","ייבוש מהיר","חיישן חכם"]},
+specs:[["Hot water","Yes"],["Auto-drain","Yes"],["Lay-flat","180°"],["Runtime","45 min"],["Weight","4.8 kg"],["Type","cordless"]],
+techs:[{ic:"🔥",n:{ru:"Горячая вода + авто-слив",he:"מים חמים + ניקוז אוטו."},d:{ru:"H60 GT нагревает воду, база сливает грязную воду автоматически.",he:"H60 GT מחמם מים, הבסיס מנקז אוטומטית."}}]},
+{id:17,brand:"Dreame",name:"H16 Pro Steam",e:"💜",type:"моющий",price:2199,suc:"28 000 Pa",pct:78,wt:"5.2 kg",ns:"74 dB",flt:"Tank",rt:"45 min",best:true,sA:2,sAl:3,sT:4,sB:2,
+desc:{ru:"200°C SaunaClean пар + двойной AI-рычаг GapFree 2.0. 28 000 Па.",he:"קיטור 200°C + זרוע AI כפול GapFree 2.0."},
+deep:{ru:"200°C пар через 6 сопел — 99.9999% стерильность. Dual-Arm AI — первый в мире двойной манипулятор.",he:"200°C דרך 6 זרבוביות — 99.9999% עקריות. Dual-Arm AI — ראשון בעולם."},
+feat:{ru:["200°C — 99.9999%","Dual-Arm AI GapFree 2.0","28 000 Па","ThermoRinse 90°C","6 паровых сопел","Без химии"],he:["200°C — 99.9999%","Dual-Arm AI GapFree 2.0","28,000 פה","ThermoRinse 90°C","6 זרבוביות","ללא כימיקלים"]},
+specs:[["Suction","28 000 Pa"],["Steam","200°C SaunaClean"],["Arms","Dual AI"],["Hot water","90°C"],["Sterility","99.9999%"],["Nozzles","6"]],
+techs:[{ic:"🧖",n:{ru:"SaunaClean 200°C",he:"SaunaClean 200°C"},d:{ru:"6 сопел при 200°C уничтожают бактерии и грибки без химии.",he:"6 זרבוביות ב-200°C מכחידים חיידקים ללא כימיקלים."}}]},
+{id:18,brand:"Dreame",name:"H15 Pro",e:"💜",type:"моющий",price:1699,suc:"22 000 Pa",pct:62,wt:"4.9 kg",ns:"72 dB",flt:"Tank",rt:"60 min",best:false,sA:2,sAl:2,sT:4,sB:2,
+desc:{ru:"22 000 Па, горячая вода 85°C, GapFree AI-рычаг, TangleCut 0 запутывания.",he:"22,000 פה, 85°C, זרוע AI GapFree, TangleCut 0 סבכים."},
+deep:{ru:"85°C разжижает жир за секунды. GapFree прижимает щётку к стенам. TangleCut режет волосы.",he:"85°C ממיס שומן. GapFree לוחץ את המברשת לקירות. TangleCut חותך שיער."},
+feat:{ru:["85°C горячая вода","GapFree AI-рычаг","TangleCut 0%","22 000 Па","180° укладка","100°C самоочистка"],he:["85°C","GapFree AI","TangleCut 0%","22,000 פה","שכיבה 180°","100°C ניקוי עצמי"]},
+specs:[["Suction","22 000 Pa"],["Hot water","85°C"],["AI arm","GapFree"],["Self-clean","100°C"],["Lay-flat","180°"],["Runtime","60 min"]],
+techs:[{ic:"✂️",n:{ru:"TangleCut Scraper",he:"TangleCut"},d:{ru:"Металлический гребень режет волосы трижды за оборот щётки — нет запутывания.",he:"מסרק מתכתי חותך שיער שלוש פעמים לסיבוב."}}]},
+{id:19,brand:"Dreame",name:"H14",e:"💜",type:"моющий",price:1549,suc:"~17 000 Pa",pct:47,wt:"4.3 kg",ns:"72 dB",flt:"Tank",rt:"50 min",best:false,sA:1,sAl:1,sT:4,sB:1,
+desc:{ru:"Надёжный базовый мойщик. Горячая вода 60°C, сушка 5 мин, 180°.",he:"שוטף בסיסי. 60°C, ייבוש 5 דק, 180°."},
+deep:{ru:"Горячая вода 60°C, сушка за 5 минут горячим воздухом. 180° под диваны.",he:"60°C, ייבוש תוך 5 דקות אוויר חם. 180° מתחת לספות."},
+feat:{ru:["60°C горячая вода","Сушка 5 мин","180°","Авто-подача воды","Самоочистка","Антизапах"],he:["60°C","ייבוש 5 דק","180°","הזנת מים אוטו.","ניקוי עצמי","ללא ריח"]},
+specs:[["Hot water","60°C"],["Drying","5 min"],["Lay-flat","180°"],["Weight","4.3 kg"],["Runtime","~50 min"],["Brush","single"]],
+techs:[{ic:"⏱️",n:{ru:"Сушка 5 минут",he:"ייבוש 5 דקות"},d:{ru:"Горячий воздух за 5 минут — никакого запаха сырой тряпки.",he:"אוויר חם תוך 5 דקות — אין ריח סמרטוט רטוב."}}]},
+{id:20,brand:"Dreame",name:"H14 Dual",e:"💜",type:"моющий",price:1995,suc:"~18 000 Pa",pct:50,wt:"4.6 kg",ns:"72 dB",flt:"Tank",rt:"50 min",best:false,sA:2,sAl:1,sT:4,sB:2,
+desc:{ru:"Две щётки: для пола и для ковра. CarpetFlex авто-распознавание.",he:"שתי מברשות: לרצפה ולשטיח. CarpetFlex."},
+deep:{ru:"Два ролика для разных покрытий. CarpetFlex — авто-определение типа поверхности.",he:"שני גלגלים לציפויים שונים. CarpetFlex — זיהוי אוטומטי."},
+feat:{ru:["Dual ролики: пол + ковёр","CarpetFlex","60°C горячая вода","Самоочистка","180°","0 запутывания"],he:["Dual: רצפה + שטיח","CarpetFlex","60°C","180°","ניקוי עצמי","0 סבכים"]},
+specs:[["Type","Dual Brush"],["Brushes","2 independent"],["Hot water","60°C"],["Auto-detect","Yes"],["Lay-flat","180°"],["Runtime","~50 min"]],
+techs:[{ic:"🔀",n:{ru:"Dual Brush CarpetFlex",he:"Dual Brush CarpetFlex"},d:{ru:"При переходе на ковёр датчик отключает воду на нужном ролике.",he:"במעבר לשטיח, החיישן עוצר מים בגליל המתאים."}}]},
+{id:21,brand:"Mova",name:"M50 Ultra",e:"🔲",type:"моющий",price:1699,suc:"~20 000 Pa",pct:56,wt:"4.5 kg",ns:"~74 dB",flt:"Tank",rt:"60 min",best:false,sA:2,sAl:1,sT:4,sB:1,
+desc:{ru:"Mova беспроводной: пылесосит и моет одновременно, база самоочищается.",he:"Mova אלחוטי: שואב ושוטף בו-זמנית."},
+deep:{ru:"Одновременно всасывает и моет. Горячая самоочистка базы. Умный датчик покрытия.",he:"שואב ושוטף בו-זמנית. ניקוי עצמי חם."},
+feat:{ru:["Пылесос + мойка в одном","Горячая самоочистка","Умный датчик","60 мин","Горячая сушка","Авторежим"],he:["שאיבה + שטיפה ביחד","ניקוי עצמי חם","חיישן","60 דק","ייבוש חם","מצב אוטומטי"]},
+specs:[["Type","wet+dry cordless"],["Runtime","60 min"],["Self-clean","hot"],["Weight","4.5 kg"],["Floors","all"],["Mode","auto+button"]],
+techs:[{ic:"🔥",n:{ru:"Горячая самоочистка",he:"ניקוי עצמי חם"},d:{ru:"База промывает и сушит щётку горячим воздухом. Нет запаха.",he:"הבסיס שוטף ומייבש את המברשת. אין ריח."}}]},
+{id:22,brand:"Dreame",name:"Z30",e:"💜",type:"беспроводной",price:1299,suc:"~200W",pct:55,wt:"3.2 kg",ns:"~72 dB",flt:"Tank",rt:"60 min",best:false,sA:1,sAl:2,sT:2,sB:1,
+desc:{ru:"Флагманский беспроводной Dreame. 60 мин, LED-подсветка, полный набор насадок.",he:"הדגל האלחוטי של Dreame. 60 דק, LED."},
+deep:{ru:"Высокоскоростной мотор, LED на щётке подсвечивает пыль, полный набор насадок.",he:"מנוע במהירות גבוהה, LED על המברשת מאיר אבק."},
+feat:{ru:["Мощный мотор","60 мин","LED-подсветка","Турбощётка","Полный набор насадок","Ручной режим"],he:["מנוע חזק","60 דק","LED","מברשת טורבו","ערכת ראשים","מצב יד"]},
+specs:[["Type","cordless stick"],["Runtime","60 min"],["Weight","3.2 kg"],["LED","on brush"],["Attachments","full set"],["Brush","turbo"]],
+techs:[{ic:"🔦",n:{ru:"LED-подсветка",he:"LED"},d:{ru:"LED освещает зону уборки — мелкая пыль заметна.",he:"LED מאיר את אזור הניקוי — אבק קטן נראה."}}]},
+{id:23,brand:"Shark",name:"IZ423",e:"🦈",type:"беспроводной",price:1599,suc:"~180W",pct:50,wt:"3.4 kg",ns:"~75 dB",flt:"Tank",rt:"60 min",best:false,sA:1,sAl:2,sT:2,sB:1,
+desc:{ru:"Anti-Hair Wrap сам снимает волосы. Двойная батарея до 60 мин. Flexology.",he:"Anti-Hair Wrap מסיר שיער בעצמו. סוללה כפולה."},
+deep:{ru:"Anti-Hair Wrap: спиральные канавки срезают волосы до намотки. Flexology — сгиб в 2 точках.",he:"Anti-Hair Wrap: חריצים ספירליים חותכים שיער לפני סבך. Flexology — כפיפה ב-2 נקודות."},
+feat:{ru:["Anti-Hair Wrap","Двойная батарея 60 мин","Flexology 2 точки","BoostIQ авто","IQ Force паркет","Ручной режим"],he:["Anti-Hair Wrap","סוללה כפולה 60 דק","Flexology 2 נקודות","BoostIQ","IQ Force","מצב יד"]},
+specs:[["Type","cordless"],["Runtime","up to 60 min"],["Brush","Anti-Hair Wrap"],["Flex","Flexology 2pt"],["Auto","BoostIQ"],["Weight","3.4 kg"]],
+techs:[{ic:"💇",n:{ru:"Anti-Hair Wrap",he:"Anti-Hair Wrap"},d:{ru:"Спиральные канавки перенаправляют волосы к устройству срезки до намотки.",he:"חריצים ספירליים מכוונים שיער להתקן חיתוך לפני סבך."}}]},
+{id:24,brand:"Dyson",name:"V12 Detect Slim Absolute",e:"🟡",type:"беспроводной",price:1549,suc:"150 AW",pct:65,wt:"2.2 kg",ns:"~68 dB",flt:"HEPA 99.97%",rt:"60 min",best:true,sA:2,sAl:3,sT:2,sB:2,
+desc:{ru:"Лазер видит пыль. HEPA 99.97%. 2.2 кг — самый лёгкий мощный. 60 мин.",he:"לייזר רואה אבק. HEPA 99.97%. 2.2 קג — הקל ביותר."},
+deep:{ru:"Лазерная подсветка показывает микрочастицы. Сенсор частиц на дисплее. HEPA 99.97%. Вес 2.2 кг — рекорд.",he:"לייזר מאיר מיקרו-חלקיקים. חיישן חלקיקים על הצג. HEPA 99.97%. משקל 2.2 קג — שיא."},
+feat:{ru:["Лазерная подсветка пыли","Сенсор частиц","HEPA 99.97%","2.2 кг — рекорд","60 мин","150 AW"],he:["לייזר לאבק","חיישן חלקיקים","HEPA 99.97%","2.2 קג — שיא","60 דק","150 AW"]},
+specs:[["Type","cordless"],["Suction","150 AW"],["Weight","2.2 kg"],["Filter","HEPA 99.97%"],["Runtime","60 min"],["Laser","dust detect"]],
+techs:[{ic:"🔦",n:{ru:"Laser Slim Fluffy",he:"Laser Slim Fluffy"},d:{ru:"Лазер делает видимыми микрочастицы пыли на твёрдых поверхностях.",he:"לייזר הופך מיקרו-חלקיקי אבק לנראים."}}]}
+];
+
+function u(id){return document.getElementById(id);}
+function tl(o){return o[L]||o.ru;}
+function tLbl(type){var m=UI[L].tLbl;return m[type]||type;}
+
+function goScreen(id){
+  document.querySelectorAll(".screen").forEach(function(s){s.classList.remove("active");});
+  u(id).classList.add("active");
+  u(id).scrollTop=0;
+}
+
+function setLang(l){
+  L=l;
+  document.documentElement.lang=l;
+  document.body.dir=UI[l].dir;
+  var t=UI[l];
+  u("splashSub").textContent=t.splashSub;
+  u("lblCatalog").textContent=t.lblCatalog;
+  u("dscCatalog").textContent=t.dscCatalog;
+  u("lblQuiz").textContent=t.lblQuiz;
+  u("dscQuiz").textContent=t.dscQuiz;
+  goScreen("splashScreen");
+}
+
+function renderCatalog(){
+  u("catTitle").textContent=UI[L].catTitle;
+  buildFilters();
+  buildGrid();
+}
+
+function buildFilters(){
+  var t=UI[L];
+  u("filterBar").innerHTML=
+    '<button class="fbtn active" data-f="all">'+t.fAll+'</button>'+
+    '<button class="fbtn" data-f="робот">'+t.fRob+'</button>'+
+    '<button class="fbtn" data-f="моющий">'+t.fWet+'</button>'+
+    '<button class="fbtn" data-f="беспроводной">'+t.fCord+'</button>';
+  u("filterBar").addEventListener("click",function(e){
+    var b=e.target.closest(".fbtn");if(!b)return;
+    CF=b.dataset.f;
+    u("filterBar").querySelectorAll(".fbtn").forEach(function(x){x.classList.remove("active");});
+    b.classList.add("active");buildGrid();
+  });
+}
+
+function buildGrid(){
+  var list=CF==="all"?PRODS:PRODS.filter(function(p){return p.type===CF;});
+  u("catalogGrid").innerHTML=list.map(function(p,i){
+    var pr=p.price?p.price.toLocaleString()+" &#8362;":UI[L].askSell;
+    var prStyle=p.price?"":"font-size:10px;font-family:Manrope;color:var(--muted)";
+    return "<div class='c-card' onclick="openDetail("+p.id+","catalogScreen")' style='animation-delay:"+(i*.04)+"s'>"+
+      "<div class='c-img'>"+
+        "<div class='c-tag-type'>"+tLbl(p.type)+"</div>"+
+        (p.best?"<div class='c-tag-top'>TOP</div>":"")+
+        p.e+
+      "</div>"+
+      "<div class='c-body'>"+
+        "<div class='c-brand'>"+p.brand+"</div>"+
+        "<div class='c-name'>"+p.name+"</div>"+
+        "<div class='c-bar-row'><span class='c-bar-label'>"+p.suc+"</span><div class='c-bar'><div class='c-bar-fill' style='width:"+p.pct+"%'></div></div></div>"+
+        "<div class='c-price' style='"+prStyle+"'>"+pr+"</div>"+
+      "</div></div>";
+  }).join("");
+}
+
+function startQuiz(){
+  QA={};QS=0;
+  u("quizTitle").textContent=UI[L].quizTitle;
+  renderQ();
+  goScreen("quizScreen");
+}
+
+function renderQ(){
+  var qs=UI[L].Q;var q=qs[QS];var t=UI[L];
+  u("progFill").style.width=((QS+1)/qs.length*100)+"%";
+  u("progLbl").textContent=t.progLbl;
+  u("progTxt").textContent=(QS+1)+" / "+qs.length;
+  u("quizStep").innerHTML=
+    "<div class='q-num'>"+t.qLbl+" "+(QS+1)+"</div>"+
+    "<div class='q-question'>"+q.q+"</div>"+
+    "<div class='q-sub'>"+q.sub+"</div>"+
+    "<div class='q-options'>"+
+    q.opts.map(function(o){
+      return "<div class='q-opt"+(QA[q.id]===o.v?" sel":"")+"' onclick='pickQ(""+q.id+"","+o.v+",this)'>"+
+        "<div class='q-opt-icon'>"+o.ic+"</div>"+
+        "<div><div class='q-opt-text'>"+o.t+"</div><div class='q-opt-sub'>"+o.s+"</div></div>"+
+        "</div>";
+    }).join("")+
+    "</div>";
+}
+
+function pickQ(id,val,el){
+  QA[id]=val;
+  document.querySelectorAll(".q-opt").forEach(function(e){e.classList.remove("sel");});
+  el.classList.add("sel");
+  setTimeout(function(){QS++;if(QS>=UI[L].Q.length)showRes();else renderQ();},350);
+}
+
+function scoreP(p){
+  var s=0,a=QA;
+  var tm={2:"беспроводной",3:"робот",4:"моющий"};
+  if(p.type===tm[a.type])s+=40;
+  if(a.allergy===3&&p.sAl>=3)s+=15;
+  else if(a.allergy===2&&p.sAl>=2)s+=10;
+  else s+=5;
+  if(p.sA>=(a.area||1))s+=15;
+  var bm={1:[0,1700],2:[1700,2500],3:[2500,3600],4:[3600,9999]};
+  var r=bm[a.budget]||[0,9999];
+  if(p.price>=r[0]&&p.price<=r[1])s+=25;
+  else if(p.price<r[0]&&p.price>0)s+=10;
+  if(p.best)s+=5;
+  return s;
+}
+
+function showRes(){
+  var sorted=PRODS.map(function(p){return Object.assign({},p,{_s:scoreP(p)});}).sort(function(a,b){return b._s-a._s;});
+  var best=sorted[0],alts=sorted.slice(1,4);
+  var t=UI[L];
+  var aM={1:t.areaS,2:t.areaM,3:t.areaL};
+  var alM={1:t.algN,2:t.algL,3:t.algS};
+  var tM={2:t.tC,3:t.tR,4:t.tW};
+  u("resTitle").textContent=t.resTitle;
+  u("resBadge").textContent=t.resBadge;
+  u("alsoTitle").textContent=t.alsoTitle;
+  u("retryBtn").textContent=t.retry;
+  u("resName").textContent=best.brand+" "+best.name;
+  u("resWhy").textContent=t.forArea+" "+(aM[QA.area]||"")+(alM[QA.allergy]||"")+" — "+t.bestIn+" "+(tM[QA.type]||tLbl(best.type))+" "+t.inBudget+" "+tl(best.desc);
+  u("resMain").innerHTML=
+    "<div class='res-img'>"+best.e+"<div class='res-main-lbl'>"+t.yourChoice+"</div></div>"+
+    "<div class='res-info'>"+
+      "<div class='res-brand'>"+best.brand+"</div>"+
+      "<div class='res-name'>"+best.name+"</div>"+
+      "<div class='res-blurb'>"+tl(best.desc)+"</div>"+
+      "<span class='res-price'>"+(best.price?best.price.toLocaleString():"&#8212;")+"</span>"+
+      "<span class='res-price-u'>&#8362;</span>"+
+    "</div>";
+  u("resMain").onclick=function(){openDetail(best.id,"resultScreen");};
+  u("resAlts").innerHTML=alts.map(function(p){
+    return "<div class='alt-card' onclick="openDetail("+p.id+","resultScreen")'>"+
+      "<div class='alt-icon'>"+p.e+"</div>"+
+      "<div class='alt-brand'>"+p.brand+"</div>"+
+      "<div class='alt-name'>"+p.name+"</div>"+
+      "<div class='alt-price'>"+(p.price?p.price.toLocaleString()+" &#8362;":"&#8212;")+"</div>"+
+    "</div>";
+  }).join("");
+  goScreen("resultScreen");
+}
+
+function openDetail(id,fromS){
+  FROM=fromS;
+  var p=null;for(var i=0;i<PRODS.length;i++){if(PRODS[i].id===id){p=PRODS[i];break;}}
+  u("detBack").onclick=function(){goScreen(FROM);};
+  u("detTopName").textContent=p.brand+" "+p.name;
+  u("detEmoji").textContent=p.e;
+  u("detTypeTag").textContent=tLbl(p.type);
+  u("scrollHint").innerHTML=UI[L].scrollHint+' <span class="arrow">&#8595;</span>';
+  var pr=p.price?"<span class='det-price'>"+p.price.toLocaleString()+"</span><span class='det-price-u'>&#8362;</span>":
+    "<span class='det-price' style='font-size:18px;color:var(--muted)'>"+UI[L].askSell+"</span>";
+  var t=UI[L];
+  u("detBasic").innerHTML=
+    "<div class='det-brand'>"+p.brand+"</div>"+
+    "<div class='det-name'>"+p.name+"</div>"+
+    "<div class='det-desc'>"+tl(p.desc)+"</div>"+pr+
+    "<div class='key-specs'>"+
+      "<div class='kspec'><span class='kspec-lbl'>"+t.sType+"</span>"+tLbl(p.type)+"</div>"+
+      "<div class='kspec'><span class='kspec-lbl'>"+t.sSuc+"</span>"+p.suc+"</div>"+
+      "<div class='kspec'><span class='kspec-lbl'>"+t.sWt+"</span>"+p.wt+"</div>"+
+      "<div class='kspec'><span class='kspec-lbl'>"+t.sFlt+"</span>"+p.flt+"</div>"+
+      "<div class='kspec'><span class='kspec-lbl'>"+t.sNs+"</span>"+p.ns+"</div>"+
+      "<div class='kspec'><span class='kspec-lbl'>"+t.sRt+"</span>"+p.rt+"</div>"+
+    "</div>";
+  var tcH=p.techs.map(function(tc){
+    return "<div class='tech-card'>"+
+      "<div class='tech-ph'><div class='tech-ph-icon'>"+tc.ic+"</div><div class='tech-ph-lbl'>"+tl(tc.n).substring(0,22).toUpperCase()+"</div></div>"+
+      "<div class='tech-info'><div class='tech-name'>"+tc.ic+" "+tl(tc.n)+"</div><div class='tech-desc'>"+tl(tc.d)+"</div></div>"+
+    "</div>";
+  }).join("");
+  var spH=p.specs.map(function(r){return "<tr><td>"+r[0]+"</td><td>"+r[1]+"</td></tr>";}).join("");
+  var ftH=tl(p.feat).map(function(f){return "<li>"+f+"</li>";}).join("");
+  u("detDeep").innerHTML=
+    "<div style='padding-top:6px;font-size:12px;color:#999;line-height:1.65'>"+tl(p.deep)+"</div>"+
+    "<div class='sec-title'>"+t.howWorks+"</div>"+
+    "<div class='tech-cards'>"+tcH+"</div>"+
+    "<div class='sec-title'>"+t.allSpecs+"</div>"+
+    "<table class='specs-tbl'>"+spH+"</table>"+
+    "<div class='sec-title'>"+t.featTitle+"</div>"+
+    "<ul class='feat-list'>"+ftH+"</ul>";
+  goScreen("detailScreen");
+}
+</script></body></html>
