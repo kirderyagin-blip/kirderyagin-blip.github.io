@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Vacuum Catalog</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0a;--card:#141414;--card2:#1c1c1c;--accent:#f0c040;--accent2:#e05a20;--green:#3ecf6e;--text:#f0ede8;--muted:#777;--border:#252525;--r:16px}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:'Manrope',sans-serif}
+.screen{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;display:none;flex-direction:column}
+.screen.active{display:flex}
+#langScreen{align-items:center;justify-content:center;padding:40px 24px;background:var(--bg)}
+.lang-logo{font-size:56px;margin-bottom:16px;text-align:center}
+.lang-title{font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:3px;color:var(--accent);margin-bottom:4px;text-align:center}
+.lang-sub{font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:44px;text-align:center}
+.lang-cards{width:100%;display:flex;flex-direction:column;gap:14px}
+.lang-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:22px 20px;cursor:pointer;position:relative;transition:transform .15s;user-select:none}
+.lang-card:active{transform:scale(.97)}
+.lang-flag{font-size:36px;margin-bottom:10px}
+.lang-name{font-family:'Bebas Neue',sans-serif;font-size:26px;margin-bottom:4px}
+.lang-hint{font-size:13px;color:#aaa}
+.lang-arrow{position:absolute;bottom:18px;right:18px;font-size:20px;color:#444}
+#splashScreen{align-items:center;justify-content:center;padding:32px 24px;background:var(--bg)}
+.splash-logo{font-family:'Bebas Neue',sans-serif;font-size:48px;letter-spacing:4px;line-height:1;text-align:center;margin-bottom:6px}
+.splash-logo em{color:var(--accent);font-style:normal}
+.splash-sub{font-size:11px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-bottom:40px;text-align:center}
+.mode-cards{width:100%;display:flex;flex-direction:column;gap:14px}
+.mode-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:22px 20px;cursor:pointer;position:relative;transition:transform .15s;user-select:none}
+.mode-card:active{transform:scale(.97)}
+.mode-icon{font-size:32px;margin-bottom:10px}
+.mode-label{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;margin-bottom:5px}
+.mode-label.y{color:var(--accent)}.mode-label.g{color:var(--green)}
+.mode-desc{font-size:13px;color:#aaa;line-height:1.5}
+.mode-arrow{position:absolute;bottom:18px;right:18px;font-size:20px;color:#444}
+.top-bar{position:sticky;top:0;z-index:50;background:rgba(10,10,10,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:13px 16px;gap:10px;flex-shrink:0}
+.back-btn{background:var(--card2);border:1px solid var(--border);color:var(--text);width:34px;height:34px;border-radius:50%;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;user-select:none}
+.top-bar-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;color:var(--accent);flex:1}
+.lang-btn{background:var(--card2);border:1px solid var(--border);color:var(--muted);padding:5px 10px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;user-select:none}
+.filters{padding:10px 14px 6px;display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;flex-shrink:0}
+.filters::-webkit-scrollbar{display:none}
+.fbtn{background:var(--card);border:1px solid var(--border);color:var(--muted);font-family:'Manrope',sans-serif;font-size:11px;font-weight:700;padding:6px 13px;border-radius:30px;cursor:pointer;white-space:nowrap;transition:all .2s;user-select:none}
+.fbtn.active,.fbtn:hover{background:var(--accent);border-color:var(--accent);color:#000}
+.catalog-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:9px 11px 80px}
+.c-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:transform .2s;animation:fUp .35s ease both}
+.c-card:active{transform:scale(.97)}
+@keyframes fUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.c-img{width:100%;aspect-ratio:1;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:48px;position:relative;border-bottom:1px solid var(--border)}
+.c-tag-type{position:absolute;top:6px;left:6px;background:rgba(0,0,0,.8);color:var(--accent);font-size:8px;font-weight:700;padding:3px 7px;border-radius:6px;text-transform:uppercase;pointer-events:none}
+.c-tag-top{position:absolute;top:6px;right:6px;background:var(--accent2);color:#fff;font-size:8px;font-weight:700;padding:3px 7px;border-radius:6px;pointer-events:none}
+.c-body{padding:9px;pointer-events:none}
+.c-brand{font-size:8px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:2px}
+.c-name{font-size:12px;font-weight:700;margin-bottom:5px;line-height:1.3}
+.c-bar-row{display:flex;align-items:center;gap:4px;margin-bottom:7px}
+.c-bar-label{font-size:9px;color:var(--muted);white-space:nowrap;min-width:30px}
+.c-bar{flex:1;height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.c-bar-fill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));border-radius:2px}
+.c-price{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--accent);letter-spacing:1px}
+.c-price span{font-family:'Manrope',sans-serif;font-size:10px;color:var(--muted)}
+#quizScreen{padding-bottom:40px}
+.quiz-progress{padding:14px 18px 0;flex-shrink:0}
+.q-prog-label{font-size:10px;color:var(--muted);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:7px;display:flex;justify-content:space-between}
+.q-prog-track{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:22px}
+.q-prog-fill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--green));border-radius:2px;transition:width .4s ease}
+.q-step{padding:0 18px;animation:fUp .3s ease}
+.q-num{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:7px}
+.q-question{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px;line-height:1.2;margin-bottom:5px}
+.q-sub{font-size:12px;color:#999;line-height:1.5;margin-bottom:20px}
+.q-options{display:flex;flex-direction:column;gap:9px}
+.q-opt{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color .2s,background .2s;user-select:none}
+.q-opt:active{transform:scale(.98)}
+.q-opt.sel{border-color:var(--green);background:rgba(62,207,110,.07)}
+.q-opt-icon{font-size:24px;flex-shrink:0;pointer-events:none}
+.q-opt-text{font-size:13px;font-weight:600;pointer-events:none}
+.q-opt-sub{font-size:11px;color:var(--muted);margin-top:2px;pointer-events:none}
+#resultScreen{padding-bottom:60px}
+.res-header{padding:22px 18px 0;animation:fUp .4s ease}
+.res-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(62,207,110,.12);border:1px solid rgba(62,207,110,.3);color:var(--green);font-size:11px;font-weight:700;padding:5px 12px;border-radius:30px;margin-bottom:14px}
+.res-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px;margin-bottom:6px}
+.res-why{font-size:13px;color:#aaa;line-height:1.6;margin-bottom:22px}
+.res-main{margin:0 14px 14px;background:var(--card);border:1.5px solid var(--green);border-radius:20px;overflow:hidden;cursor:pointer}
+.res-img{height:160px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:80px;border-bottom:1px solid var(--border);position:relative;pointer-events:none}
+.res-main-lbl{position:absolute;bottom:12px;left:12px;background:var(--green);color:#000;font-size:10px;font-weight:800;padding:4px 11px;border-radius:20px;text-transform:uppercase;pointer-events:none}
+.res-info{padding:16px;pointer-events:none}
+.res-brand{font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px}
+.res-name{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px;margin-bottom:7px}
+.res-blurb{font-size:12px;color:#aaa;line-height:1.5;margin-bottom:12px}
+.res-price{font-family:'Bebas Neue',sans-serif;font-size:34px;color:var(--accent);letter-spacing:1px}
+.res-price-u{font-size:13px;color:var(--muted);margin-left:4px}
+.res-alts-title{padding:0 18px 9px;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--muted);text-transform:uppercase}
+.res-alts{display:flex;gap:9px;padding:0 14px 22px;overflow-x:auto;scrollbar-width:none}
+.res-alts::-webkit-scrollbar{display:none}
+.alt-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:13px;min-width:140px;cursor:pointer;transition:transform .15s;user-select:none}
+.alt-card:active{transform:scale(.97)}
+.alt-icon{font-size:32px;margin-bottom:7px;pointer-events:none}
+.alt-brand{font-size:8px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:2px;pointer-events:none}
+.alt-name{font-size:12px;font-weight:700;margin-bottom:5px;pointer-events:none}
+.alt-price{font-family:'Bebas Neue',sans-serif;font-size:17px;color:var(--accent);pointer-events:none}
+.retry-btn{margin:0 14px 8px;width:calc(100% - 28px);background:transparent;border:1.5px solid var(--border);color:var(--muted);font-family:'Manrope',sans-serif;font-size:13px;font-weight:700;padding:14px;border-radius:12px;cursor:pointer}
+#detailScreen{padding-bottom:40px}
+.det-hero{background:var(--card2);width:100%;height:220px;display:flex;align-items:center;justify-content:center;font-size:100px;border-bottom:1px solid var(--border);position:relative;flex-shrink:0}
+.det-type-tag{position:absolute;bottom:12px;left:12px;background:var(--accent);color:#000;font-size:10px;font-weight:800;padding:4px 13px;border-radius:20px;text-transform:uppercase;letter-spacing:1px}
+.det-body{padding:0 16px}
+.det-basic{padding:18px 0 22px;border-bottom:1px solid var(--border)}
+.det-brand{font-size:9px;font-weight:700;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:5px}
+.det-name{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:1px;line-height:1.05;margin-bottom:9px}
+.det-desc{font-size:13px;color:#bbb;line-height:1.6;margin-bottom:16px}
+.det-price{font-family:'Bebas Neue',sans-serif;font-size:40px;color:var(--accent);letter-spacing:1px}
+.det-price-u{font-size:14px;color:var(--muted);margin-left:4px}
+.key-specs{display:flex;flex-wrap:wrap;gap:7px;margin-top:18px}
+.kspec{background:var(--card2);border:1px solid var(--border);border-radius:30px;padding:6px 13px;font-size:11px;font-weight:700}
+.kspec-lbl{color:var(--muted);margin-right:4px}
+.scroll-hint{display:flex;align-items:center;justify-content:center;gap:8px;padding:16px 0 5px;font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;font-weight:700}
+.arrow{animation:bounce 1.5s infinite;display:inline-block}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
+.det-deep{padding:0 0 20px}
+.sec-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;color:var(--accent);margin:26px 0 13px}
+.tech-cards{display:flex;flex-direction:column;gap:13px}
+.tech-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.tech-ph{width:100%;height:100px;background:linear-gradient(135deg,var(--card2),#222);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px}
+.tech-ph-icon{font-size:36px}
+.tech-ph-lbl{font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.tech-info{padding:13px 15px}
+.tech-name{font-size:13px;font-weight:800;margin-bottom:4px}
+.tech-desc{font-size:12px;color:#aaa;line-height:1.55}
+.specs-tbl{width:100%;border-collapse:collapse}
+.specs-tbl tr{border-bottom:1px solid var(--border)}
+.specs-tbl tr:last-child{border-bottom:none}
+.specs-tbl td{padding:11px 0;font-size:12px}
+.specs-tbl td:first-child{color:var(--muted);width:50%}
+.specs-tbl td:last-child{font-weight:700;text-align:right}
+.feat-list{list-style:none;display:flex;flex-direction:column;gap:9px}
+.feat-list li{display:flex;align-items:flex-start;gap:11px;font-size:12px;color:#ccc;line-height:1.5}
+.feat-list li::before{content:"\2713";color:var(--green);font-weight:800;width:20px;height:20px;background:rgba(62,207,110,.1);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;margin-top:1px}
+</style>
+</head>
+<body>
+
+<div id="langScreen" class="screen active">
+  <div class="lang-logo">&#x1F9F9;</div>
+  <div class="lang-title">VACUUM</div>
+  <div class="lang-sub">CATALOG &middot; &#x05E7;&#x05D8;&#x05DC;&#x05D5;&#x05D2;</div>
+  <div class="lang-cards">
+    <div class="lang-card" id="btnHe">
+      <div class="lang-flag">&#x1F1EE;&#x1F1F1;</div>
+      <div class="lang-name" style="color:var(--accent);direction:rtl">&#x05E2;&#x05D1;&#x05E8;&#x05D9;&#x05EA;</div>
+      <div class="lang-hint" style="direction:rtl">&#x05D4;&#x05DE;&#x05E9;&#x05DA; &#x05D1;&#x05E2;&#x05D1;&#x05E8;&#x05D9;&#x05EA;</div>
+      <div class="lang-arrow">&larr;</div>
+    </div>
+    <div class="lang-card" id="btnRu">
+      <div class="lang-flag">&#x1F1F7;&#x1F1FA;</div>
+      <div class="lang-name" style="color:var(--green)">&#x0420;&#x0423;&#x0421;&#x0421;&#x041A;&#x0418;&#x0419;</div>
+      <div class="lang-hint">&#x041F;&#x0440;&#x043E;&#x0434;&#x043E;&#x043B;&#x0436;&#x0438;&#x0442;&#x044C; &#x043D;&#x0430; &#x0440;&#x0443;&#x0441;&#x0441;&#x043A;&#x043E;&#x043C;</div>
+      <div class="lang-arrow">&rarr;</div>
+    </div>
+  </div>
+</div>
+
+<div id="splashScreen" class="screen">
+  <div class="splash-logo">VACUUM<em>S</em></div>
+  <div id="splashSub" class="splash-sub">Catalog</div>
+  <div class="mode-cards">
+    <div class="mode-card" id="btnCatalog">
+      <div class="mode-icon">&#x1F4CB;</div>
+      <div class="mode-label y" id="lblCatalog">CATALOG</div>
+      <div class="mode-desc" id="dscCatalog">All models</div>
+      <div class="mode-arrow">&rarr;</div>
+    </div>
+    <div class="mode-card" id="btnQuiz">
+      <div class="mode-icon">&#x1F3AF;</div>
+      <div class="mode-label g" id="lblQuiz">FIND FOR ME</div>
+      <div class="mode-desc" id="dscQuiz">4 questions</div>
+      <div class="mode-arrow">&rarr;</div>
+    </div>
+  </div>
+</div>
+
+<div id="catalogScreen" class="screen">
+  <div class="top-bar">
+    <div class="back-btn" id="catBack">&#8592;</div>
+    <div class="top-bar-title" id="catTitle">CATALOG</div>
+    <div class="lang-btn" id="catLang">&#x1F310;</div>
+  </div>
+  <div class="filters" id="filterBar"></div>
+  <div class="catalog-grid" id="catalogGrid"></div>
+</div>
+
+<div id="quizScreen" class="screen">
+  <div class="top-bar">
+    <div class="back-btn" id="quizBack">&#8592;</div>
+    <div class="top-bar-title" id="quizTitle">QUIZ</div>
+    <div class="lang-btn" id="quizLang">&#x1F310;</div>
+  </div>
+  <div class="quiz-progress">
+    <div class="q-prog-label"><span id="progLbl">PROGRESS</span><span id="progTxt">1/4</span></div>
+    <div class="q-prog-track"><div class="q-prog-fill" id="progFill" style="width:25%"></div></div>
+  </div>
+  <div id="quizStep" class="q-step"></div>
+</div>
+
+<div id="resultScreen" class="screen">
+  <div class="top-bar">
+    <div class="back-btn" id="resBack">&#8592;</div>
+    <div class="top-bar-title" id="resTitle">RESULT</div>
+    <div class="lang-btn" id="resLang">&#x1F310;</div>
+  </div>
+  <div class="res-header">
+    <div class="res-badge" id="resBadge">Result</div>
+    <div class="res-title" id="resName"></div>
+    <div class="res-why" id="resWhy"></div>
+  </div>
+  <div class="res-main" id="resMain"></div>
+  <div class="res-alts-title" id="alsoTitle">ALSO CONSIDER</div>
+  <div class="res-alts" id="resAlts"></div>
+  <button class="retry-btn" id="retryBtn">Retry</button>
+</div>
+
+<div id="detailScreen" class="screen">
+  <div class="top-bar">
+    <div class="back-btn" id="detBack">&#8592;</div>
+    <div class="top-bar-title" id="detTopName"></div>
+  </div>
+  <div class="det-hero">
+    <span id="detEmoji"></span>
+    <div class="det-type-tag" id="detTypeTag"></div>
+  </div>
+  <div class="det-body">
+    <div class="det-basic" id="detBasic"></div>
+    <div class="scroll-hint" id="scrollHint">Scroll <span class="arrow">&#8595;</span></div>
+    <div class="det-deep" id="detDeep"></div>
+  </div>
+</div>
+
+<script>
+var L = "ru";
+var CF = "all";
+var QA = {};
+var QS = 0;
+var FROM = "catalogScreen";
+
+var UI = {
+ru: {
+  dir:"ltr", splashSub:"\u041a\u0430\u0442\u0430\u043b\u043e\u0433 \u043c\u0430\u0433\u0430\u0437\u0438\u043d\u0430 \u00b7 23 \u043c\u043e\u0434\u0435\u043b\u0438",
+  lblCatalog:"\u0421\u041c\u041e\u0422\u0420\u0415\u0422\u042c \u041a\u0410\u0422\u0410\u041b\u041e\u0413",
+  dscCatalog:"\u0412\u0441\u0435 23 \u043c\u043e\u0434\u0435\u043b\u0438 \u0441 \u0446\u0435\u043d\u0430\u043c\u0438 \u0438 \u0445\u0430\u0440\u0430\u043a\u0442\u0435\u0440\u0438\u0441\u0442\u0438\u043a\u0430\u043c\u0438.",
+  lblQuiz:"\u041f\u041e\u0414\u041e\u0411\u0420\u0410\u0422\u042c \u0414\u041b\u042f \u041c\u0415\u041d\u042f",
+  dscQuiz:"4 \u0432\u043e\u043f\u0440\u043e\u0441\u0430 \u2014 \u0440\u0435\u043a\u043e\u043c\u0435\u043d\u0434\u0430\u0446\u0438\u044f \u0438\u0437 \u043d\u0430\u0448\u0435\u0433\u043e \u0430\u0441\u0441\u043e\u0440\u0442\u0438\u043c\u0435\u043d\u0442\u0430.",
+  catTitle:"\u041a\u0410\u0422\u0410\u041b\u041e\u0413",
+  quizTitle:"\u041f\u041e\u0414\u0411\u041e\u0420",
+  resTitle:"\u0420\u0415\u041a\u041e\u041c\u0415\u041d\u0414\u0410\u0426\u0418\u042f",
+  resBadge:"\u2756 \u041f\u043e\u0434\u043e\u0431\u0440\u0430\u043d\u043e \u0434\u043b\u044f \u0432\u0430\u0441",
+  alsoTitle:"\u0422\u0410\u041a\u0416\u0415 \u0420\u0410\u0421\u0421\u041c\u041e\u0422\u0420\u0418\u0422\u0415",
+  retry:"\u21ba \u041f\u0440\u043e\u0439\u0442\u0438 \u0437\u0430\u043d\u043e\u0432\u043e",
+  yourChoice:"\u0412\u0430\u0448 \u0432\u044b\u0431\u043e\u0440",
+  scrollHint:"\u041b\u0438\u0441\u0442\u0430\u0439\u0442\u0435 \u0432\u043d\u0438\u0437",
+  howWorks:"\u041a\u0410\u041a \u042d\u0422\u041e \u0420\u0410\u0411\u041e\u0422\u0410\u0415\u0422",
+  allSpecs:"\u0425\u0410\u0420\u0410\u041a\u0422\u0415\u0420\u0418\u0421\u0422\u0418\u041a\u0418",
+  featTitle:"\u041e\u0421\u041e\u0411\u0415\u041d\u041d\u041e\u0421\u0422\u0418",
+  progLbl:"\u041f\u0420\u041e\u0413\u0420\u0415\u0421\u0421",
+  qLbl:"\u0412\u041e\u041f\u0420\u041e\u0421",
+  fAll:"\u0412\u0441\u0435 (23)", fRob:"\u0420\u043e\u0431\u043e\u0442\u044b", fWet:"\u041c\u043e\u044e\u0449\u0438\u0435", fCord:"\u0411\u0435\u0441\u043f\u0440\u043e\u0432\u043e\u0434\u043d\u044b\u0435",
+  sType:"\u0422\u0438\u043f", sSuc:"\u0412\u0441\u0430\u0441\u044b\u0432\u0430\u043d\u0438\u0435", sWt:"\u0412\u0435\u0441", sFlt:"\u0424\u0438\u043b\u044c\u0442\u0440", sNs:"\u0428\u0443\u043c", sRt:"\u0411\u0430\u0442\u0430\u0440\u0435\u044f",
+  askSell:"\u0423\u0442\u043e\u0447\u043d\u0438\u0442\u044c \u0443 \u043f\u0440\u043e\u0434\u0430\u0432\u0446\u0430",
+  forArea:"\u0414\u043b\u044f", bestIn:"\u043b\u0443\u0447\u0448\u0438\u0439", inBudget:"\u0432 \u0432\u0430\u0448\u0435\u043c \u0431\u044e\u0434\u0436\u0435\u0442\u0435.",
+  areaS:"\u043d\u0435\u0431\u043e\u043b\u044c\u0448\u043e\u0439 \u043f\u043b\u043e\u0449\u0430\u0434\u0438",
+  areaM:"\u0441\u0442\u0430\u043d\u0434\u0430\u0440\u0442\u043d\u043e\u0439 \u043a\u0432\u0430\u0440\u0442\u0438\u0440\u044b",
+  areaL:"\u0431\u043e\u043b\u044c\u0448\u043e\u0433\u043e \u0434\u043e\u043c\u0430",
+  algN:"", algL:" \u0441 \u0445\u043e\u0440\u043e\u0448\u0435\u0439 \u0444\u0438\u043b\u044c\u0442\u0440\u0430\u0446\u0438\u0435\u0439",
+  algS:" \u0441 \u043c\u0430\u043a\u0441. \u0444\u0438\u043b\u044c\u0442\u0440\u0430\u0446\u0438\u0435\u0439",
+  tR:"\u0440\u043e\u0431\u043e\u0442", tW:"\u043c\u043e\u044e\u0449\u0438\u0439", tC:"\u0431\u0435\u0441\u043f\u0440\u043e\u0432\u043e\u0434\u043d\u043e\u0439",
+  tLbl:{
+    "\u0440\u043e\u0431\u043e\u0442":"\u0440\u043e\u0431\u043e\u0442",
+    "\u043c\u043e\u044e\u0449\u0438\u0439":"\u043c\u043e\u044e\u0449\u0438\u0439",
+    "\u0431\u0435\u0441\u043f\u0440\u043e\u0432\u043e\u0434\u043d\u043e\u0439":"\u0431\u0435\u0441\u043f\u0440\u043e\u0432\u043e\u0434\u043d\u043e\u0439",
+    "\u0440\u043e\u0431\u043e\u0442":"\u0440\u043e\u0431\u043e\u0442",
+    "\u043c\u043e\u044e\u0449\u0438\u0439":"\u043c\u043e\u044e\u0449\u0438\u0439",
+    "\u0431\u0435\u0441\u043f\u0440\u043e\u0432\u043e\u0434\u043d\u043e\u0439":"\u0431\u0435\u0441\u043f\u0440\u043e\u0432\u043e\u0434\u043d\u043e\u0439"
+  },
+  Q:[
+    {id:"type",q:"\u041a\u0410\u041a \u0425\u041e\u0422\u0418\u0422\u0415 \u0423\u0411\u0418\u0420\u0410\u0422\u042c\u0421\u042f?",sub:"\u042d\u0442\u043e \u0441\u0430\u043c\u044b\u0439 \u0432\u0430\u0436\u043d\u044b\u0439 \u0432\u044b\u0431\u043e\u0440.",opts:[
+      {ic:"\uD83E\uDD16",t:"\u0420\u043e\u0431\u043e\u0442 \u2014 \u0441\u0430\u043c \u0443\u0431\u0435\u0440\u0451\u0442\u0441\u044f",s:"\u0411\u0435\u0437 \u0443\u0447\u0430\u0441\u0442\u0438\u044f",v:3},
+      {ic:"\uD83D\uDCA7",t:"\u041c\u043e\u0439\u043a\u0430 \u043f\u043e\u043b\u0430",s:"\u0412\u043b\u0430\u0436\u043d\u0430\u044f + \u0441\u0443\u0445\u0430\u044f",v:4},
+      {ic:"\uD83D\uDD0B",t:"\u0411\u0435\u0441\u043f\u0440\u043e\u0432\u043e\u0434\u043d\u043e\u0439",s:"\u041b\u0451\u0433\u043a\u0438\u0439, \u0432\u0435\u0437\u0434\u0435",v:2}
+    ]},
+    {id:"area",q:"\u041f\u041b\u041e\u0429\u0410\u0414\u042c \u0414\u041e\u041c\u0410?",sub:"\u0412\u043b\u0438\u044f\u0435\u0442 \u043d\u0430 \u043c\u043e\u0449\u043d\u043e\u0441\u0442\u044c.",opts:[
+      {ic:"\uD83C\uDFE0",t:"\u0414\u043e 70 \u043c\u00b2",s:"1\u20132 \u043a\u043e\u043c\u043d\u0430\u0442\u044b",v:1},
+      {ic:"\uD83C\uDFE1",t:"70\u2013130 \u043c\u00b2",s:"\u0421\u0442\u0430\u043d\u0434\u0430\u0440\u0442\u043d\u0430\u044f",v:2},
+      {ic:"\uD83C\uDFD8",t:"\u0411\u043e\u043b\u044c\u0448\u0435 130 \u043c\u00b2",s:"\u0411\u043e\u043b\u044c\u0448\u043e\u0439 \u0434\u043e\u043c",v:3}
+    ]},
+    {id:"allergy",q:"\u0415\u0421\u0422\u042c \u0410\u041b\u041b\u0415\u0420\u0413\u0418\u042f?",sub:"\u041f\u044b\u043b\u044c, \u0448\u0435\u0440\u0441\u0442\u044c, \u043a\u043b\u0435\u0449\u0438.",opts:[
+      {ic:"\uD83D\uDE0A",t:"\u041d\u0435\u0442",s:"\u041e\u0431\u044b\u0447\u043d\u0430\u044f \u0447\u0443\u0432\u0441\u0442\u0432\u0438\u0442\u0435\u043b\u044c\u043d\u043e\u0441\u0442\u044c",v:1},
+      {ic:"\uD83E\uDD27",t:"\u0415\u0441\u0442\u044c \u043d\u0435\u043c\u043d\u043e\u0433\u043e",s:"\u0418\u043d\u043e\u0433\u0434\u0430 \u0440\u0435\u0430\u0433\u0438\u0440\u0443\u044e",v:2},
+      {ic:"\uD83D\uDE37",t:"\u0421\u0438\u043b\u044c\u043d\u0430\u044f",s:"\u041d\u0443\u0436\u043d\u0430 \u043c\u0430\u043a\u0441. \u0444\u0438\u043b\u044c\u0442\u0440\u0430\u0446\u0438\u044f",v:3}
+    ]},
+    {id:"budget",q:"\u0411\u042e\u0414\u0416\u0415\u0422?",sub:"\u0428\u0435\u043a\u0435\u043b\u0438.",opts:[
+      {ic:"\uD83D\uDCB5",t:"\u0414\u043e 1700 \u20aa",s:"\u0420\u0430\u0437\u0443\u043c\u043d\u0430\u044f \u0446\u0435\u043d\u0430",v:1},
+      {ic:"\uD83D\uDCB4",t:"1700\u20132500 \u20aa",s:"\u0425\u043e\u0440\u043e\u0448\u0435\u0435 \u043a\u0430\u0447\u0435\u0441\u0442\u0432\u043e",v:2},
+      {ic:"\uD83D\uDCB6",t:"2500\u20133600 \u20aa",s:"\u041f\u0440\u0435\u043c\u0438\u0443\u043c",v:3},
+      {ic:"\uD83D\uDCB7",t:"3600+ \u20aa",s:"\u041b\u0443\u0447\u0448\u0435\u0435",v:4}
+    ]}
+  ]
+},
+he: {
+  dir:"rtl", splashSub:"\u05E7\u05D8\u05DC\u05D5\u05D2 \u05D4\u05D7\u05E0\u05D5\u05EA \u00b7 23 \u05D3\u05D2\u05DE\u05D9\u05DD",
+  lblCatalog:"\u05DC\u05E6\u05E4\u05D9\u05D9\u05D4 \u05D1\u05E7\u05D8\u05DC\u05D5\u05D2",
+  dscCatalog:"\u05DB\u05DC 23 \u05D4\u05D3\u05D2\u05DE\u05D9\u05DD \u05E2\u05DD \u05DE\u05D7\u05D9\u05E8\u05D9\u05DD.",
+  lblQuiz:"\u05DE\u05E6\u05D0 \u05DC\u05D9 \u05D0\u05EA \u05D4\u05DE\u05EA\u05D0\u05D9\u05DD",
+  dscQuiz:"4 \u05E9\u05D0\u05DC\u05D5\u05EA \u2014 \u05D4\u05DE\u05DC\u05E6\u05D4 \u05D0\u05D9\u05E9\u05D9\u05EA.",
+  catTitle:"\u05E7\u05D8\u05DC\u05D5\u05D2",
+  quizTitle:"\u05D4\u05EA\u05D0\u05DE\u05D4 \u05D0\u05D9\u05E9\u05D9\u05EA",
+  resTitle:"\u05D4\u05DE\u05DC\u05E6\u05D4",
+  resBadge:"\u2756 \u05E0\u05D1\u05D7\u05E8 \u05E2\u05D1\u05D5\u05E8\u05DA",
+  alsoTitle:"\u05E9\u05E7\u05D5\u05DC \u05D2\u05DD",
+  retry:"\u21ba \u05D4\u05EA\u05D7\u05DC \u05DE\u05D7\u05D3\u05E9",
+  yourChoice:"\u05D4\u05D1\u05D7\u05D9\u05E8\u05D4 \u05E9\u05DC\u05DA",
+  scrollHint:"\u05D2\u05DC\u05D5\u05DC \u05DC\u05DE\u05D8\u05D4",
+  howWorks:"\u05D0\u05D9\u05DA \u05D6\u05D4 \u05E2\u05D5\u05D1\u05D3",
+  allSpecs:"\u05DE\u05E4\u05E8\u05D8 \u05D8\u05DB\u05E0\u05D9",
+  featTitle:"\u05D9\u05EA\u05E8\u05D5\u05E0\u05D5\u05EA",
+  progLbl:"\u05D4\u05EA\u05E7\u05D3\u05DE\u05D5\u05EA",
+  qLbl:"\u05E9\u05D0\u05DC\u05D4",
+  fAll:"\u05D4\u05DB\u05DC (23)", fRob:"\u05E8\u05D5\u05D1\u05D5\u05D8\u05D9\u05DD", fWet:"\u05E9\u05D5\u05D8\u05E4\u05D9\u05DD", fCord:"\u05D0\u05DC\u05D7\u05D5\u05D8\u05D9\u05D9\u05DD",
+  sType:"\u05E1\u05D5\u05D2", sSuc:"\u05E2\u05D5\u05E6\u05DE\u05EA \u05E9\u05D0\u05D9\u05D1\u05D4", sWt:"\u05DE\u05E9\u05E7\u05DC", sFlt:"\u05E1\u05D9\u05E0\u05D5\u05DF", sNs:"\u05E8\u05E2\u05E9", sRt:"\u05E1\u05D5\u05DC\u05DC\u05D4",
+  askSell:"\u05E4\u05E0\u05D4 \u05DC\u05DE\u05D5\u05DB\u05E8",
+  forArea:"\u05E2\u05D1\u05D5\u05E8", bestIn:"\u05D4\u05D8\u05D5\u05D1 \u05D1\u05D9\u05D5\u05EA\u05E8", inBudget:"\u05D1\u05EA\u05E7\u05E6\u05D9\u05D1 \u05E9\u05DC\u05DA.",
+  areaS:"\u05E9\u05D8\u05D7 \u05E7\u05D8\u05DF", areaM:"\u05D3\u05D9\u05E8\u05D4 \u05E8\u05D2\u05D9\u05DC\u05D4", areaL:"\u05D1\u05D9\u05EA \u05D2\u05D3\u05D5\u05DC",
+  algN:"", algL:" \u05E2\u05DD \u05E1\u05D9\u05E0\u05D5\u05DF \u05D8\u05D5\u05D1", algS:" \u05E2\u05DD HEPA \u05DE\u05E7\u05E1\u05D9\u05DE\u05DC\u05D9",
+  tR:"\u05E8\u05D5\u05D1\u05D5\u05D8", tW:"\u05E9\u05D5\u05D8\u05E3", tC:"\u05D0\u05DC\u05D7\u05D5\u05D8\u05D9",
+  tLbl:{"\u05E8\u05D5\u05D1\u05D5\u05D8":"\u05E8\u05D5\u05D1\u05D5\u05D8","\u05E9\u05D5\u05D8\u05E3":"\u05E9\u05D5\u05D8\u05E3","\u05D0\u05DC\u05D7\u05D5\u05D8\u05D9":"\u05D0\u05DC\u05D7\u05D5\u05D8\u05D9","\u0440\u043e\u0431\u043e\u0442":"\u05E8\u05D5\u05D1\u05D5\u05D8","\u043c\u043e\u044e\u0449\u0438\u0439":"\u05E9\u05D5\u05D8\u05E3","\u0431\u0435\u0441\u043f\u0440\u043e\u0432\u043e\u0434\u043d\u043e\u0439":"\u05D0\u05DC\u05D7\u05D5\u05D8\u05D9"},
+  Q:[
+    {id:"type",q:"\u05D0\u05D9\u05DA \u05EA\u05E8\u05E6\u05D4 \u05DC\u05E0\u05E7\u05D5\u05EA?",sub:"\u05D6\u05D5 \u05D4\u05D1\u05D7\u05D9\u05E8\u05D4 \u05D4\u05D7\u05E9\u05D5\u05D1\u05D4.",opts:[
+      {ic:"\uD83E\uDD16",t:"\u05E8\u05D5\u05D1\u05D5\u05D8 \u2014 \u05D9\u05E0\u05E7\u05D4 \u05DC\u05D1\u05D3",s:"\u05D1\u05DC\u05D9 \u05DE\u05D0\u05DE\u05E5",v:3},
+      {ic:"\uD83D\uDCA7",t:"\u05E9\u05D8\u05D9\u05E4\u05EA \u05E8\u05E6\u05E4\u05D4",s:"\u05D9\u05D1\u05E9 + \u05E8\u05D8\u05D5\u05D1",v:4},
+      {ic:"\uD83D\uDD0B",t:"\u05D0\u05DC\u05D7\u05D5\u05D8\u05D9",s:"\u05E7\u05DC, \u05DE\u05D4\u05D9\u05E8",v:2}
+    ]},
+    {id:"area",q:"\u05E9\u05D8\u05D7 \u05D4\u05D1\u05D9\u05EA?",sub:"\u05DE\u05E9\u05E4\u05D9\u05E2 \u05E2\u05DC \u05E1\u05D5\u05D2 \u05D5\u05E2\u05D5\u05E6\u05DE\u05D4.",opts:[
+      {ic:"\uD83C\uDFE0",t:"\u05E2\u05D3 70 \u05DE\u0022\u05E8",s:"1\u20132 \u05D7\u05D3\u05E8\u05D9\u05DD",v:1},
+      {ic:"\uD83C\uDFE1",t:"70\u2013130 \u05DE\u0022\u05E8",s:"\u05D3\u05D9\u05E8\u05D4 \u05E8\u05D2\u05D9\u05DC\u05D4",v:2},
+      {ic:"\uD83C\uDFD8",t:"\u05DE\u05E2\u05DC 130 \u05DE\u0022\u05E8",s:"\u05D1\u05D9\u05EA \u05D2\u05D3\u05D5\u05DC",v:3}
+    ]},
+    {id:"allergy",q:"\u05D9\u05E9 \u05D0\u05DC\u05E8\u05D2\u05D9\u05D4?",sub:"\u05D0\u05D1\u05E7, \u05E9\u05D9\u05E2\u05E8, \u05E7\u05E8\u05D3\u05D9\u05D5\u05EA.",opts:[
+      {ic:"\uD83D\uDE0A",t:"\u05DC\u05D0",s:"\u05E8\u05D2\u05D9\u05E9\u05D5\u05EA \u05E8\u05D2\u05D9\u05DC\u05D4",v:1},
+      {ic:"\uD83E\uDD27",t:"\u05E7\u05E6\u05EA",s:"\u05DC\u05E4\u05E2\u05DE\u05D9\u05DD \u05DE\u05D2\u05D9\u05D1",v:2},
+      {ic:"\uD83D\uDE37",t:"\u05D7\u05D6\u05E7\u05D4",s:"\u05E6\u05E8\u05D9\u05DA \u05E1\u05D9\u05E0\u05D5\u05DF \u05DE\u05E7\u05E1\u05D9\u05DE\u05DC\u05D9",v:3}
+    ]},
+    {id:"budget",q:"\u05EA\u05E7\u05E6\u05D9\u05D1?",sub:"\u05E9\u05E7\u05DC\u05D9\u05DD.",opts:[
+      {ic:"\uD83D\uDCB5",t:"\u05E2\u05D3 1700 \u20AA",s:"\u05DE\u05D7\u05D9\u05E8 \u05E1\u05D1\u05D9\u05E8",v:1},
+      {ic:"\uD83D\uDCB4",t:"1700\u20132500 \u20AA",s:"\u05D0\u05D9\u05DB\u05D5\u05EA \u05D8\u05D5\u05D1\u05D4",v:2},
+      {ic:"\uD83D\uDCB6",t:"2500\u20133600 \u20AA",s:"\u05E4\u05E8\u05D9\u05DE\u05D9\u05D5\u05DD",v:3},
+      {ic:"\uD83D\uDCB7",t:"3600+ \u20AA",s:"\u05D4\u05DB\u05D9 \u05D8\u05D5\u05D1",v:4}
+    ]}
+  ]
+}
+};
+
+var PRODS=[
+{id:1,brand:"Roborock",name:"F25 ACE (CE)",type:"робот",price:1270,suc:"20 000 Pa",pct:56,wt:"5.3 kg",ns:"74 dB",flt:"Tank",rt:"60 min",best:false,sA:1,sAl:1,sT:4,img:"https://www.i-cell.co.il/cdn/shop/files/33.jpg?v=1775460886&width=400",url:"https://www.i-cell.co.il/products/31720",
+desc:{ru:"Базовый мойщик Roborock. 20 000 Па, 85°C, 60 мин.",he:"שוטף בסיסי. 20,000 פה, 85°C, 60 דק."},
+deep:{ru:"F25 ACE (CE) - надёжный Roborock с европейской сертификацией CE.",he:"F25 ACE CE - Roborock אמין עם תעודת CE."},
+feat:{ru:["20 000 Pa","Горячая самоочистка","60 min / 410 m2","JawScraper","SlideTech 2.0","CE"],he:["20,000 Pa","ניקוי עצמי חם","60 min / 410 m2","JawScraper","SlideTech 2.0","CE"]},
+specs:[["Suction","20 000 Pa"],["Runtime","60 min"],["Coverage","410 m2"],["Self-clean","hot"],["Cert","CE"],["Weight","5.3 kg"]],
+techs:[{ic:"✓",n:{ru:"JawScraper",he:"JawScraper"},d:{ru:"Скребок убирает излишки воды.",he:"הגרדן מסיר עודפי מים."}}]},
+
+{id:2,brand:"Dyson",name:"V15s Detect Submarine",type:"моющий",price:2119,suc:"150 AW",pct:65,wt:"3.5 kg",ns:"~70 dB",flt:"HEPA",rt:"60 min",best:true,sA:2,sAl:3,sT:4,img:"https://www.i-cell.co.il/cdn/shop/files/v15s_aed405b8-2cf4-41ab-9e1c-7db97dc6c64a.png?v=1755503370&width=333",url:"https://www.i-cell.co.il/products/31890",
+desc:{ru:"Лазер + ролик Submarine для мытья полов.",he:"לייזר + ראש Submarine לשטיפה."},
+deep:{ru:"V15s сочетает лазерную подсветку с роликовой щёткой Submarine.",he:"V15s - לייזר וגליל Submarine לשטיפה רטה."},
+feat:{ru:["Лазер","Submarine ролик","Сенсор частиц","HEPA 99.97%","60 min","150 AW"],he:["לייזר","Submarine","חיישן","HEPA 99.97%","60 דק","150 AW"]},
+specs:[["Suction","150 AW"],["Mop","Submarine roller"],["Filter","HEPA 99.97%"],["Runtime","60 min"],["Weight","3.5 kg"],["Laser","Yes"]],
+techs:[{ic:"~",n:{ru:"Submarine Roller",he:"Submarine Roller"},d:{ru:"Ролик моет полы.",he:"גליל רטוב לשטיפה."}}]},
+
+{id:3,brand:"Roborock",name:"F25 ACE COMBO",type:"моющий",price:1990,suc:"20 000 Pa",pct:56,wt:"5.5 kg",ns:"74 dB",flt:"Tank",rt:"60 min",best:false,sA:2,sAl:1,sT:4,img:"https://www.i-cell.co.il/cdn/shop/files/f25acecombo_faa7da45-a78e-4376-bed1-2f92b1b8216a.png?v=1755503372&width=700",url:"https://www.i-cell.co.il/products/31730",
+desc:{ru:"5-в-1: мойщик + насадки для дивана, ковра, углов.",he:"5 ב-1: שוטף + ראשים לספה, שטיח, פינות."},
+deep:{ru:"F25 ACE Combo = мойщик + 5 насадок. SlideTech 2.0 - 70°.",he:"F25 ACE Combo = שוטף + 5 ראשים. SlideTech 2.0 - 70°."},
+feat:{ru:["20 000 Pa + 5 насадок","Мойка + пылесос","SlideTech 2.0 70°","60 min","Self-clean","Горячая база"],he:["20,000 Pa + 5 ראשים","שטיפה + שאיבה","SlideTech 2.0 70°","60 min","Self-clean","בסיס חם"]},
+specs:[["Suction","20 000 Pa"],["Attachments","5"],["Swivel","70°"],["Runtime","60 min"],["Self-clean","hot"],["Weight","5.5 kg"]],
+techs:[{ic:"5",n:{ru:"5-в-1",he:"5 ב-1"},d:{ru:"Один прибор: пол, диван, ковёр, углы.",he:"מכשיר אחד: רצפה, ספה, שטיח, פינות."}}]},
+
+{id:4,brand:"Dyson",name:"V12 Detect Slim Absolute",type:"беспроводной",price:1549,suc:"150 AW",pct:65,wt:"2.2 kg",ns:"~68 dB",flt:"HEPA 99.97%",rt:"60 min",best:true,sA:2,sAl:3,sT:2,img:"https://www.i-cell.co.il/cdn/shop/files/V12_79dab377-72ac-45ec-8c00-074963026111.jpg?v=1755503374&width=271",url:"https://www.i-cell.co.il/products/31840",
+desc:{ru:"Лазер видит пыль. HEPA 99.97%. 2.2 кг. 60 мин.",he:"לייזר רואה אבק. HEPA 99.97%. 2.2 קג."},
+deep:{ru:"Лазерная подсветка показывает микрочастицы. Сенсор на дисплее.",he:"לייזר מאיר מיקרו-חלקיקים. חיישן על הצג."},
+feat:{ru:["Лазерная подсветка","Сенсор частиц","HEPA 99.97%","2.2 kg","60 min","150 AW"],he:["לייזר","חיישן","HEPA 99.97%","2.2 kg","60 דק","150 AW"]},
+specs:[["Suction","150 AW"],["Weight","2.2 kg"],["Filter","HEPA 99.97%"],["Runtime","60 min"],["Laser","Yes"],["Display","particle count"]],
+techs:[{ic:"*",n:{ru:"Laser Slim Fluffy",he:"Laser Slim Fluffy"},d:{ru:"Лазер делает видимыми микрочастицы пыли.",he:"לייזר הופך אבק לנראה."}}]},
+
+{id:5,brand:"Shark",name:"IZ423 STRATOS IQ",type:"беспроводной",price:1599,suc:"~180W",pct:50,wt:"3.4 kg",ns:"~75 dB",flt:"Tank",rt:"60 min",best:false,sA:1,sAl:2,sT:2,img:"https://www.i-cell.co.il/cdn/shop/files/423_e26a5827-f9d9-490d-a367-aaf75b1af7d7.webp?v=1755503375&width=800",url:"https://www.i-cell.co.il/products/31700",
+desc:{ru:"Anti-Hair Wrap. Двойная батарея. Flexology.",he:"Anti-Hair Wrap. סוללה כפולה."},
+deep:{ru:"Anti-Hair Wrap: спиральные канавки срезают волосы. Flexology - 2 точки гибкости.",he:"Anti-Hair Wrap: חריצים חותכים שיער."},
+feat:{ru:["Anti-Hair Wrap","Двойная батарея 60 min","Flexology","BoostIQ","IQ Force","Ручной режим"],he:["Anti-Hair Wrap","סוללה כפולה 60 דק","Flexology","BoostIQ","IQ Force","מצב יד"]},
+specs:[["Suction","~180W"],["Runtime","60 min (2 batt)"],["Brush","Anti-Hair Wrap"],["Flex","Flexology"],["Mode","BoostIQ"],["Weight","3.4 kg"]],
+techs:[{ic:"~",n:{ru:"Anti-Hair Wrap",he:"Anti-Hair Wrap"},d:{ru:"Спиральные канавки направляют волосы к устройству срезки.",he:"חריצים ספירליים מכוונים שיער לחיתוך."}}]},
+
+{id:6,brand:"Dyson",name:"V11 Advanced",type:"беспроводной",price:1499,suc:"185 AW",pct:60,wt:"3.0 kg",ns:"~70 dB",flt:"HEPA",rt:"60 min",best:false,sA:2,sAl:2,sT:2,img:"https://www.i-cell.co.il/cdn/shop/files/V11_40162b8c-1cb3-4f5f-874c-a70fc93d303b.jpg?v=1776169707&width=500",url:"https://www.i-cell.co.il/products/31830",
+desc:{ru:"185 AW, LCD-дисплей, 60 мин.",he:"185 AW, צג LCD, 60 דק."},
+deep:{ru:"V11 Advanced - мощный стик-пылесос с LCD.",he:"V11 Advanced - שואב מקל עם צג LCD."},
+feat:{ru:["185 AW","LCD-дисплей","60 min","HEPA","3 режима","Torque Drive"],he:["185 AW","צג LCD","60 דק","HEPA","3 מצבים","Torque Drive"]},
+specs:[["Suction","185 AW"],["Display","LCD"],["Runtime","60 min"],["Filter","HEPA"],["Weight","3.0 kg"],["Modes","3"]],
+techs:[{ic:"^",n:{ru:"Hyperdymium Motor",he:"Hyperdymium Motor"},d:{ru:"Мотор 125 000 об/мин.",he:"מנוע 125,000 סלל/דק."}}]},
+
+{id:7,brand:"Roborock",name:"Q REVO Edge 5V1",type:"робот",price:2039,suc:"11 500 Pa",pct:48,wt:"3.9 kg",ns:"65 dB",flt:"Auto",rt:"-",best:false,sA:2,sAl:2,sT:3,img:"https://www.i-cell.co.il/cdn/shop/files/5v1_6207e612-3fbf-4daa-bb24-5e5426acffe2.png?v=1755503379&width=1000",url:"https://www.i-cell.co.il/products/31750",
+desc:{ru:"Робот с FlexiArm и антизапутывающей щёткой DuoDivide.",he:"רובוט עם FlexiArm ומברשת DuoDivide."},
+deep:{ru:"Q REVO Edge 5V1 - FlexiArm в углы, DuoDivide 0% запутывания.",he:"Q REVO Edge 5V1 - FlexiArm לפינות, DuoDivide 0% סבכים."},
+feat:{ru:["FlexiArm","DuoDivide 0%","Горячая вода","Auto-empty","LiDAR","5-in-1"],he:["FlexiArm","DuoDivide 0%","מים חמים","Auto-empty","LiDAR","5 ב-1"]},
+specs:[["Suction","11 500 Pa"],["Brush","FlexiArm Anti-tangle"],["Hot water","Yes"],["Auto-empty","Yes"],["Navigation","LiDAR"],["Functions","5-in-1"]],
+techs:[{ic:"V",n:{ru:"FlexiArm",he:"FlexiArm"},d:{ru:"Щётка выдвигается в углы.",he:"המברשת נפרשת לפינות."}}]},
+
+{id:8,brand:"Roborock",name:"Q REVO 5AE",type:"робот",price:2369,suc:"13 500 Pa",pct:54,wt:"4.0 kg",ns:"65 dB",flt:"Auto",rt:"-",best:false,sA:2,sAl:2,sT:3,img:"https://www.i-cell.co.il/cdn/shop/files/5ae_ec9163d6-21fc-4118-bcd8-cbd438f15bb1.png?v=1755503383&width=1000",url:"https://www.i-cell.co.il/products/31780",
+desc:{ru:"Робот с горячей водой 75C и авто-сбросом.",he:"רובוט עם מים חמים 75C ופריקה."},
+deep:{ru:"Q REVO 5AE - горячая вода 75C для стирки моп. Авто-сброс и сушка.",he:"Q REVO 5AE - 75C לשטיפת המגב. פריקה וייבוש."},
+feat:{ru:["13 500 Pa","75C вода","Auto-empty","DuoDivide","LiDAR","Сушка"],he:["13,500 Pa","75C מים","Auto-empty","DuoDivide","LiDAR","ייבוש"]},
+specs:[["Suction","13 500 Pa"],["Hot water","75C"],["Auto-empty","Yes"],["Brush","DuoDivide"],["Navigation","LiDAR"],["Drying","hot air"]],
+techs:[{ic:"H",n:{ru:"75C Hot Water",he:"75C מים חמים"},d:{ru:"Горячая вода 75C разжижает жир на моп.",he:"מים חמים 75C ממיסים שומן."}}]},
+
+{id:9,brand:"Dreame",name:"X50 Ultra",type:"робот",price:3127,suc:"20 000 Pa",pct:56,wt:"4.2 kg",ns:"~65 dB",flt:"Auto",rt:"-",best:true,sA:3,sAl:2,sT:3,img:"https://www.i-cell.co.il/cdn/shop/files/X50.jpg?v=1755503389&width=1000",url:"https://www.i-cell.co.il/products/31570",
+desc:{ru:"Первый в мире с ногами ProLeap. Пороги до 6 см.",he:"ראשון בעולם עם רגליים ProLeap. מכשולים עד 6 סם."},
+deep:{ru:"ProLeap: 3 моторизованных ноги перешагивают пороги до 60 мм.",he:"ProLeap: 3 רגליים עוברות מכשולים עד 60 ממ."},
+feat:{ru:["ProLeap ноги","Пороги 60 mm!","VersaLift LiDAR","20 000 Pa","PowerDock","DuoBrush"],he:["רגליים ProLeap","מכשולים 60 mm!","VersaLift LiDAR","20,000 Pa","PowerDock","DuoBrush"]},
+specs:[["Suction","20 000 Pa"],["Threshold","60 mm"],["Legs","ProLeap motors"],["LiDAR","VersaLift fold"],["Auto-bag","100 days"],["Weight","4.2 kg"]],
+techs:[{ic:"L",n:{ru:"ProLeap",he:"ProLeap"},d:{ru:"3 мотора выдвигают ноги - первый робот в мире.",he:"3 מנועים - ראשון בעולם."}}]},
+
+{id:10,brand:"Dreame",name:"H14 Dual",type:"моющий",price:1995,suc:"~18 000 Pa",pct:50,wt:"4.6 kg",ns:"72 dB",flt:"Tank",rt:"~50 min",best:false,sA:2,sAl:1,sT:4,img:"https://www.i-cell.co.il/cdn/shop/files/H14-DUAIL_3.jpg?v=1755503392&width=1000",url:"https://www.i-cell.co.il/products/31530",
+desc:{ru:"Dual: две щётки для пола и ковра. CarpetFlex.",he:"Dual: שתי מברשות. CarpetFlex."},
+deep:{ru:"H14 Dual - два ролика, CarpetFlex авто-распознавание типа поверхности.",he:"H14 Dual - שני גלגלים. CarpetFlex."},
+feat:{ru:["Dual ролики","CarpetFlex","60C","180°","0 запутывания","Self-clean"],he:["Dual גלגלים","CarpetFlex","60C","180°","0 סבכים","Self-clean"]},
+specs:[["Type","Dual Brush"],["Hot water","60C"],["Auto-detect","Yes"],["Lay-flat","180°"],["Runtime","~50 min"],["Weight","4.6 kg"]],
+techs:[{ic:"D",n:{ru:"Dual Brush CarpetFlex",he:"Dual Brush CarpetFlex"},d:{ru:"Два ролика, авто-определение покрытия.",he:"שני גלגלים, זיהוי אוטו."}}]},
+
+{id:11,brand:"Dreame",name:"Z30",type:"беспроводной",price:1299,suc:"~200W",pct:55,wt:"3.2 kg",ns:"~72 dB",flt:"Tank",rt:"60 min",best:false,sA:1,sAl:2,sT:2,img:"https://www.i-cell.co.il/cdn/shop/files/Z30-A-2_944b2783-3c56-4662-ab48-116b405bc6b0.jpg?v=1755503392&width=400",url:"https://www.i-cell.co.il/products/31640",
+desc:{ru:"Флагман Dreame. 60 мин, LED.",he:"הדגל של Dreame. 60 דק, LED."},
+deep:{ru:"Dreame Z30 - мощный мотор, LED на щётке.",he:"Dreame Z30 - מנוע חזק, LED."},
+feat:{ru:["Мощный мотор","60 min","LED","HEPA","Набор насадок","Ручной"],he:["מנוע חזק","60 דק","LED","HEPA","ערכת ראשים","יד"]},
+specs:[["Suction","~200W"],["Runtime","60 min"],["Weight","3.2 kg"],["LED","Yes"],["Filter","HEPA"],["Mode","3 speeds"]],
+techs:[{ic:"*",n:{ru:"LED",he:"LED"},d:{ru:"LED освещает зону уборки.",he:"ה-LED מאיר אבק."}}]},
+
+{id:12,brand:"Dreame",name:"H14",type:"моющий",price:1549,suc:"~17 000 Pa",pct:47,wt:"4.3 kg",ns:"72 dB",flt:"Tank",rt:"~50 min",best:false,sA:1,sAl:1,sT:4,img:"https://www.i-cell.co.il/cdn/shop/files/H14_1.jpg?v=1755503394&width=1000",url:"https://www.i-cell.co.il/products/31520",
+desc:{ru:"Базовый мойщик. 60C, 5 мин сушка, 180°.",he:"שוטף בסיסי. 60C, ייבוש 5 דק, 180°."},
+deep:{ru:"H14 - вода 60C, сушка 5 мин, 180° под диваны.",he:"H14 - 60C, ייבוש 5 דק. 180° מתחת לספות."},
+feat:{ru:["60C","Сушка 5 мин","180°","Авто-подача","Self-clean","0 запаха"],he:["60C","ייבוש 5 דק","180°","הזנת מים אוטו.","Self-clean","ללא ריח"]},
+specs:[["Hot water","60C"],["Drying","5 min"],["Lay-flat","180°"],["Weight","4.3 kg"],["Runtime","~50 min"],["Brush","single"]],
+techs:[{ic:"5",n:{ru:"5-мин сушка",he:"5 דקות ייבוש"},d:{ru:"Горячий воздух за 5 мин.",he:"אוויר חם תוך 5 דקות."}}]},
+
+{id:13,brand:"Dreame",name:"H15 Pro",type:"моющий",price:1749,suc:"22 000 Pa",pct:62,wt:"4.9 kg",ns:"72 dB",flt:"Tank",rt:"60 min",best:false,sA:2,sAl:2,sT:4,img:"https://www.i-cell.co.il/cdn/shop/files/10_1.avif?v=1755724244&width=1000",url:"https://www.i-cell.co.il/products/31510",
+desc:{ru:"22 000 Pa, 85C, GapFree AI, TangleCut.",he:"22,000 Pa, 85C, GapFree AI, TangleCut."},
+deep:{ru:"H15 Pro - 85C разжижает жир. GapFree AI прижимает щётку к стенам.",he:"H15 Pro - 85C. GapFree AI לוחץ אל הקירות."},
+feat:{ru:["85C","GapFree AI","TangleCut 0%","22 000 Pa","180°","100C самоочистка"],he:["85C","GapFree AI","TangleCut 0%","22,000 Pa","180°","100C ניקוי עצמי"]},
+specs:[["Suction","22 000 Pa"],["Hot water","85C"],["AI arm","GapFree"],["Self-clean","100C"],["Lay-flat","180°"],["Runtime","60 min"]],
+techs:[{ic:"X",n:{ru:"TangleCut",he:"TangleCut"},d:{ru:"Металлический гребень режет волосы.",he:"חותך שיער."}}]},
+
+{id:14,brand:"Mova",name:"V50 Ultra Complete",type:"робот",price:3160,suc:"24 000 Pa",pct:67,wt:"4.0 kg",ns:"~64 dB",flt:"Auto",rt:"-",best:false,sA:2,sAl:2,sT:3,img:"https://www.i-cell.co.il/cdn/shop/files/total-front.webp?v=1755726670&width=700",url:"https://www.i-cell.co.il/products/31670",
+desc:{ru:"24 000 Pa, DuoSolution, RoboSwing.",he:"24,000 Pa, DuoSolution, RoboSwing."},
+deep:{ru:"DuoSolution нагревает воду и дозирует моющее автоматически.",he:"DuoSolution מחמם ומוסיף חומר ניקוי אוטו."},
+feat:{ru:["24 000 Pa","DuoSolution","RoboSwing","Triple LiDAR","Auto-empty","App"],he:["24,000 Pa","DuoSolution","RoboSwing","Triple LiDAR","Auto-empty","App"]},
+specs:[["Suction","24 000 Pa"],["Mop","DuoSolution"],["Navigation","Triple LiDAR"],["Auto-empty","Yes"],["Drying","hot air"],["Weight","4.0 kg"]],
+techs:[{ic:"S",n:{ru:"DuoSolution",he:"DuoSolution"},d:{ru:"Дозирует моющее автоматически.",he:"מדוון אוטומטי."}}]},
+
+{id:15,brand:"Mova",name:"Z60 Ultra Roller",type:"моющий",price:3549,suc:"28 000 Pa",pct:78,wt:"4.2 kg",ns:"~64 dB",flt:"Tank",rt:"60+ min",best:false,sA:3,sAl:2,sT:4,img:"https://www.i-cell.co.il/cdn/shop/files/total-front-_-__1.webp?v=1755725838&width=700",url:"https://www.i-cell.co.il/products/31680",
+desc:{ru:"28 000 Pa, HydroForce 12 сопел.",he:"28,000 Pa, HydroForce 12 זרבוביות."},
+deep:{ru:"HydroForce: 12 сопел непрерывно ополаскивают ролик.",he:"HydroForce: 12 זרבוביות מדיחות את הגליל."},
+feat:{ru:["28 000 Pa","HydroForce","AutoShield","DuoBrush","HEPA","Двойной ролик"],he:["28,000 Pa","HydroForce","AutoShield","DuoBrush","HEPA","גליל כפול"]},
+specs:[["Suction","28 000 Pa"],["Roller","dual HydroForce"],["Nozzles","12"],["Shield","AutoShield"],["Weight","4.2 kg"],["Filter","HEPA"]],
+techs:[{ic:"W",n:{ru:"HydroForce",he:"HydroForce"},d:{ru:"12 сопел подают воду и отжимают грязную.",he:"12 זרבוביות מספקות מים."}}]},
+
+{id:16,brand:"Mova",name:"X4 Pro",type:"беспроводной",price:1649,suc:"~180W",pct:50,wt:"3.5 kg",ns:"~72 dB",flt:"Tank",rt:"60 min",best:false,sA:1,sAl:1,sT:2,img:"https://www.i-cell.co.il/cdn/shop/files/x4_pro.webp?v=1759995228&width=600",url:"https://www.i-cell.co.il/products/33227",
+desc:{ru:"Беспроводной Mova. 60 мин, 180°.",he:"אלחוטי Mova. 60 דק, 180°."},
+deep:{ru:"Mova X4 Pro - лёгкий с укладкой 180°.",he:"Mova X4 Pro - קל עם שכיבה 180°."},
+feat:{ru:["60 min","180°","HEPA","Мощный мотор","Turbo","Ручной"],he:["60 דק","180°","HEPA","מנוע חזק","Turbo","יד"]},
+specs:[["Suction","~180W"],["Runtime","60 min"],["Weight","3.5 kg"],["Lay-flat","180°"],["Filter","HEPA"],["Brand","Mova"]],
+techs:[{ic:"M",n:{ru:"180°",he:"180°"},d:{ru:"180° укладка под мебель.",he:"שכיבה מתחת לרהיטות."}}]}
+];
+;
+
+
+function u(id){return document.getElementById(id);}
+function tl(o){return o[L]||o.ru;}
+function tLbl(type){var m=UI[L].tLbl;return m[type]||type;}
+
+function goScreen(id){
+  document.querySelectorAll(".screen").forEach(function(s){s.classList.remove("active");});
+  u(id).classList.add("active");
+  u(id).scrollTop=0;
+}
+
+function setLang(l){
+  L=l;
+  document.documentElement.lang=l;
+  document.body.dir=UI[l].dir;
+  var t=UI[l];
+  u("splashSub").textContent=t.splashSub;
+  u("lblCatalog").textContent=t.lblCatalog;
+  u("dscCatalog").textContent=t.dscCatalog;
+  u("lblQuiz").textContent=t.lblQuiz;
+  u("dscQuiz").textContent=t.dscQuiz;
+  goScreen("splashScreen");
+}
+
+function renderCatalog(){
+  u("catTitle").textContent=UI[L].catTitle;
+  buildFilters();
+  buildGrid();
+}
+
+function buildFilters(){
+  var t=UI[L];
+  var bar=u("filterBar");
+  bar.innerHTML="";
+  var filters=[{f:"all",lbl:t.fAll},{f:"\u0440\u043e\u0431\u043e\u0442",lbl:t.fRob},{f:"\u043c\u043e\u044e\u0449\u0438\u0439",lbl:t.fWet},{f:"\u0431\u0435\u0441\u043f\u0440\u043e\u0432\u043e\u0434\u043d\u043e\u0439",lbl:t.fCord}];
+  filters.forEach(function(fi){
+    var btn=document.createElement("button");
+    btn.className="fbtn"+(CF===fi.f?" active":"");
+    btn.textContent=fi.lbl;
+    btn.dataset.f=fi.f;
+    btn.addEventListener("click",function(){
+      CF=this.dataset.f;
+      bar.querySelectorAll(".fbtn").forEach(function(b){b.classList.remove("active");});
+      this.classList.add("active");
+      buildGrid();
+    });
+    bar.appendChild(btn);
+  });
+}
+
+function buildGrid(){
+  var grid=u("catalogGrid");
+  grid.innerHTML="";
+  var list=CF==="all"?PRODS:PRODS.filter(function(p){return p.type===CF;});
+  list.forEach(function(p,i){
+    var card=document.createElement("div");
+    card.className="c-card";
+    card.style.animationDelay=(i*0.04)+"s";
+    var pr=p.price?p.price.toLocaleString()+" &#8362;":UI[L].askSell;
+    var prStyle=p.price?"":"font-size:10px;font-family:Manrope;color:var(--muted)";
+    card.innerHTML=
+      "<div class='c-img'>"+
+        "<div class='c-tag-type'>"+tLbl(p.type)+"</div>"+
+        (p.best?"<div class='c-tag-top'>TOP</div>":"")+
+        (p.img?'<img src="'+p.img+'" style="width:75%;height:75%;object-fit:contain;" loading="lazy" onerror="this.style.display='none'">':p.e||"?")+
+      "</div>"+
+      "<div class='c-body'>"+
+        "<div class='c-brand'>"+p.brand+"</div>"+
+        "<div class='c-name'>"+p.name+"</div>"+
+        "<div class='c-bar-row'><span class='c-bar-label'>"+p.suc+"</span><div class='c-bar'><div class='c-bar-fill' style='width:"+p.pct+"%'></div></div></div>"+
+        "<div class='c-price' style='"+prStyle+"'>"+pr+"</div>"+
+      "</div>";
+    card.addEventListener("click",function(){openDetail(p.id,"catalogScreen");});
+    grid.appendChild(card);
+  });
+}
+
+function startQuiz(){
+  QA={};QS=0;
+  u("quizTitle").textContent=UI[L].quizTitle;
+  renderQ();
+  goScreen("quizScreen");
+}
+
+function renderQ(){
+  var qs=UI[L].Q;var q=qs[QS];var t=UI[L];
+  u("progFill").style.width=((QS+1)/qs.length*100)+"%";
+  u("progLbl").textContent=t.progLbl;
+  u("progTxt").textContent=(QS+1)+" / "+qs.length;
+  var step=u("quizStep");
+  step.innerHTML="<div class='q-num'>"+t.qLbl+" "+(QS+1)+"</div>"+
+    "<div class='q-question'>"+q.q+"</div>"+
+    "<div class='q-sub'>"+q.sub+"</div>"+
+    "<div class='q-options' id='qOpts'></div>";
+  var opts=u("qOpts");
+  q.opts.forEach(function(o){
+    var el=document.createElement("div");
+    el.className="q-opt"+(QA[q.id]===o.v?" sel":"");
+    el.innerHTML="<div class='q-opt-icon'>"+o.ic+"</div><div><div class='q-opt-text'>"+o.t+"</div><div class='q-opt-sub'>"+o.s+"</div></div>";
+    el.addEventListener("click",function(){
+      opts.querySelectorAll(".q-opt").forEach(function(e){e.classList.remove("sel");});
+      el.classList.add("sel");
+      QA[q.id]=o.v;
+      setTimeout(function(){QS++;if(QS>=UI[L].Q.length)showRes();else renderQ();},350);
+    });
+    opts.appendChild(el);
+  });
+}
+
+function scoreP(p){
+  var s=0,a=QA;
+  var tm={2:"\u0431\u0435\u0441\u043f\u0440\u043e\u0432\u043e\u0434\u043d\u043e\u0439",3:"\u0440\u043e\u0431\u043e\u0442",4:"\u043c\u043e\u044e\u0449\u0438\u0439"};
+  if(p.type===tm[a.type])s+=40;
+  if(a.allergy===3&&p.sAl>=3)s+=15;
+  else if(a.allergy===2&&p.sAl>=2)s+=10;
+  else s+=5;
+  if(p.sA>=(a.area||1))s+=15;
+  var bm={1:[0,1700],2:[1700,2500],3:[2500,3600],4:[3600,9999]};
+  var r=bm[a.budget]||[0,9999];
+  if(p.price>=r[0]&&p.price<=r[1])s+=25;
+  else if(p.price<r[0]&&p.price>0)s+=10;
+  if(p.best)s+=5;
+  return s;
+}
+
+function showRes(){
+  var sorted=PRODS.map(function(p){return Object.assign({},p,{_s:scoreP(p)});}).sort(function(a,b){return b._s-a._s;});
+  var best=sorted[0],alts=sorted.slice(1,4);
+  var t=UI[L];
+  var aM={1:t.areaS,2:t.areaM,3:t.areaL};
+  var alM={1:t.algN,2:t.algL,3:t.algS};
+  var tM={2:t.tC,3:t.tR,4:t.tW};
+  u("resTitle").textContent=t.resTitle;
+  u("resBadge").textContent=t.resBadge;
+  u("alsoTitle").textContent=t.alsoTitle;
+  u("retryBtn").textContent=t.retry;
+  u("resName").textContent=best.brand+" "+best.name;
+  u("resWhy").textContent=t.forArea+" "+(aM[QA.area]||"")+(alM[QA.allergy]||"")+" \u2014 "+t.bestIn+" "+(tM[QA.type]||tLbl(best.type))+" "+t.inBudget+" "+tl(best.desc);
+  var rm=u("resMain");
+  rm.innerHTML=
+    "<div class='res-img'>"+best.e+"<div class='res-main-lbl'>"+t.yourChoice+"</div></div>"+
+    "<div class='res-info'>"+
+      "<div class='res-brand'>"+best.brand+"</div>"+
+      "<div class='res-name'>"+best.name+"</div>"+
+      "<div class='res-blurb'>"+tl(best.desc)+"</div>"+
+      "<span class='res-price'>"+(best.price?best.price.toLocaleString():"\u2014")+"</span>"+
+      "<span class='res-price-u'>&#8362;</span>"+
+    "</div>";
+  rm.addEventListener("click",function(){openDetail(best.id,"resultScreen");});
+  var ra=u("resAlts");
+  ra.innerHTML="";
+  alts.forEach(function(p){
+    var el=document.createElement("div");
+    el.className="alt-card";
+    el.innerHTML=
+      "<div class='alt-icon'>"+p.e+"</div>"+
+      "<div class='alt-brand'>"+p.brand+"</div>"+
+      "<div class='alt-name'>"+p.name+"</div>"+
+      "<div class='alt-price'>"+(p.price?p.price.toLocaleString()+" &#8362;":"\u2014")+"</div>";
+    el.addEventListener("click",function(){openDetail(p.id,"resultScreen");});
+    ra.appendChild(el);
+  });
+  goScreen("resultScreen");
+}
+
+function openDetail(id,fromS){
+  FROM=fromS;
+  var p=null;for(var i=0;i<PRODS.length;i++){if(PRODS[i].id===id){p=PRODS[i];break;}}
+  u("detBack").onclick=function(){goScreen(FROM);};
+  u("detTopName").textContent=p.brand+" "+p.name;
+  var de=u("detEmoji");
+  if(p.img){de.innerHTML="<img src=\'"+p.img+"\' style=\'max-width:160px;max-height:160px;object-fit:contain;\'>";}
+  else{de.textContent=p.e||"?";}
+  u("detTypeTag").textContent=tLbl(p.type);
+  u("scrollHint").innerHTML=UI[L].scrollHint+' <span class="arrow">&#8595;</span>';
+  var t=UI[L];
+  var prHtml=p.price?"<span class='det-price'>"+p.price.toLocaleString()+"</span><span class='det-price-u'>&#8362;</span>":"<span style='font-size:18px;color:var(--muted)'>"+t.askSell+"</span>";
+  u("detBasic").innerHTML=
+    "<div class='det-brand'>"+p.brand+"</div>"+
+    "<div class='det-name'>"+p.name+"</div>"+
+    "<div class='det-desc'>"+tl(p.desc)+"</div>"+prHtml+
+    "<div class='key-specs'>"+
+      "<div class='kspec'><span class='kspec-lbl'>"+t.sType+"</span>"+tLbl(p.type)+"</div>"+
+      "<div class='kspec'><span class='kspec-lbl'>"+t.sSuc+"</span>"+p.suc+"</div>"+
+      "<div class='kspec'><span class='kspec-lbl'>"+t.sWt+"</span>"+p.wt+"</div>"+
+      "<div class='kspec'><span class='kspec-lbl'>"+t.sFlt+"</span>"+p.flt+"</div>"+
+      "<div class='kspec'><span class='kspec-lbl'>"+t.sNs+"</span>"+p.ns+"</div>"+
+      "<div class='kspec'><span class='kspec-lbl'>"+t.sRt+"</span>"+p.rt+"</div>"+
+    "</div>";
+  var tcH=p.techs.map(function(tc){
+    return "<div class='tech-card'>"+
+      "<div class='tech-ph'><div class='tech-ph-icon'>"+tc.ic+"</div><div class='tech-ph-lbl'>"+tl(tc.n).substring(0,22).toUpperCase()+"</div></div>"+
+      "<div class='tech-info'><div class='tech-name'>"+tc.ic+" "+tl(tc.n)+"</div><div class='tech-desc'>"+tl(tc.d)+"</div></div>"+
+    "</div>";
+  }).join("");
+  var spH=p.specs.map(function(r){return "<tr><td>"+r[0]+"</td><td>"+r[1]+"</td></tr>";}).join("");
+  var ftH=tl(p.feat).map(function(f){return "<li>"+f+"</li>";}).join("");
+  u("detDeep").innerHTML=
+    "<div style='padding-top:6px;font-size:12px;color:#999;line-height:1.65'>"+tl(p.deep)+"</div>"+
+    "<div class='sec-title'>"+t.howWorks+"</div><div class='tech-cards'>"+tcH+"</div>"+
+    "<div class='sec-title'>"+t.allSpecs+"</div><table class='specs-tbl'>"+spH+"</table>"+
+    "<div class='sec-title'>"+t.featTitle+"</div><ul class='feat-list'>"+ftH+"</ul>";
+  goScreen("detailScreen");
+}
+
+// Wire up all buttons once DOM is ready
+document.addEventListener("DOMContentLoaded",function(){
+  u("btnHe").addEventListener("click",function(){setLang("he");});
+  u("btnRu").addEventListener("click",function(){setLang("ru");});
+  u("btnCatalog").addEventListener("click",function(){goScreen("catalogScreen");renderCatalog();});
+  u("btnQuiz").addEventListener("click",function(){startQuiz();});
+  u("catBack").addEventListener("click",function(){goScreen("splashScreen");});
+  u("catLang").addEventListener("click",function(){goScreen("langScreen");});
+  u("quizBack").addEventListener("click",function(){goScreen("splashScreen");});
+  u("quizLang").addEventListener("click",function(){goScreen("langScreen");});
+  u("resBack").addEventListener("click",function(){goScreen("splashScreen");});
+  u("resLang").addEventListener("click",function(){goScreen("langScreen");});
+  u("retryBtn").addEventListener("click",function(){startQuiz();});
+});
+</script></body></html>
