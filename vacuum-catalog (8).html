@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>שואבי אבק | iCell אילת</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&family=Manrope:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --accent:#e30613;--accent2:#ff6b35;--dark:#1a1a2e;--text:#222;
+  --muted:#777;--border:#e5e5e5;--bg:#f8f9fa;--white:#fff;
+  --card-shadow:0 2px 12px rgba(0,0,0,.08);--r:12px;
+}
+html,body{height:100%;overflow:hidden;font-family:'Heebo',sans-serif;color:var(--text)}
+body{background:var(--bg)}
+
+/* ── SCREENS ── */
+.screen{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;display:none;flex-direction:column}
+.screen.active{display:flex}
+
+/* ══════════════ LANG SELECT ══════════════ */
+#langScreen{
+  background:linear-gradient(135deg,#1a1a2e 0%,#16213e 60%,#0f3460 100%);
+  align-items:center;justify-content:center;padding:40px 24px;gap:0
+}
+.lang-logo-wrap{text-align:center;margin-bottom:32px}
+.lang-logo-wrap img{width:120px;filter:brightness(0) invert(1);opacity:.9}
+.lang-logo-text{font-family:'Heebo',sans-serif;font-size:28px;font-weight:800;color:#fff;letter-spacing:2px;margin-top:8px}
+.lang-logo-sub{font-size:13px;color:rgba(255,255,255,.5);letter-spacing:1px;margin-top:4px}
+.lang-cards{width:100%;display:flex;flex-direction:column;gap:14px;max-width:400px}
+.lang-card{
+  background:rgba(255,255,255,.08);
+  border:1.5px solid rgba(255,255,255,.15);
+  border-radius:16px;padding:20px 22px;
+  cursor:pointer;display:flex;align-items:center;gap:16px;
+  transition:all .2s;backdrop-filter:blur(10px)
+}
+.lang-card:active{transform:scale(.97)}
+.lang-card:hover{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.3)}
+.lang-flag{font-size:36px;flex-shrink:0}
+.lang-card-text{}
+.lang-name{font-size:20px;font-weight:700;color:#fff;margin-bottom:3px}
+.lang-hint{font-size:13px;color:rgba(255,255,255,.55)}
+.lang-arrow{margin-right:auto;font-size:20px;color:rgba(255,255,255,.4)}
+
+/* ══════════════ SPLASH ══════════════ */
+#splashScreen{background:var(--white);align-items:stretch}
+.splash-header{
+  background:var(--accent);padding:28px 20px 24px;
+  display:flex;flex-direction:column;align-items:center;gap:6px
+}
+.splash-brand{font-size:28px;font-weight:800;color:#fff;letter-spacing:2px}
+.splash-tagline{font-size:13px;color:rgba(255,255,255,.8)}
+.splash-hero{padding:24px 20px 0;flex:1}
+.splash-hero h1{font-size:22px;font-weight:700;margin-bottom:8px;text-align:center}
+.splash-hero p{font-size:14px;color:var(--muted);text-align:center;line-height:1.6;margin-bottom:28px}
+.splash-modes{display:flex;flex-direction:column;gap:14px}
+.splash-mode{
+  border-radius:16px;padding:20px;cursor:pointer;
+  display:flex;align-items:center;gap:16px;
+  transition:transform .15s;position:relative;overflow:hidden
+}
+.splash-mode:active{transform:scale(.98)}
+.splash-mode.catalog{background:linear-gradient(135deg,#1a1a2e,#0f3460);color:#fff}
+.splash-mode.quiz{background:linear-gradient(135deg,#e30613,#ff4444);color:#fff}
+.splash-mode-icon{font-size:36px;flex-shrink:0}
+.splash-mode-title{font-size:18px;font-weight:700;margin-bottom:4px}
+.splash-mode-desc{font-size:13px;opacity:.8;line-height:1.4}
+.splash-mode-arrow{margin-right:auto;font-size:22px;opacity:.6}
+.lang-switch-btn{
+  margin:20px auto;padding:10px 20px;
+  background:transparent;border:1px solid var(--border);
+  border-radius:20px;font-size:13px;color:var(--muted);
+  cursor:pointer;display:flex;align-items:center;gap:6px
+}
+
+/* ══════════════ TOP BAR ══════════════ */
+.top-bar{
+  position:sticky;top:0;z-index:100;
+  background:var(--white);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 16px;height:56px;gap:10px;
+  flex-shrink:0;box-shadow:0 1px 8px rgba(0,0,0,.06)
+}
+.top-bar-brand{font-size:20px;font-weight:800;color:var(--accent);letter-spacing:1px;flex:1}
+.back-btn{
+  width:36px;height:36px;border-radius:50%;
+  background:var(--bg);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:18px;flex-shrink:0
+}
+.lang-btn{
+  background:var(--bg);border:1px solid var(--border);
+  padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;
+  cursor:pointer;color:var(--muted);flex-shrink:0
+}
+
+/* ══════════════ CATALOG ══════════════ */
+#catalogScreen{background:var(--bg)}
+.filter-bar{
+  background:var(--white);border-bottom:1px solid var(--border);
+  padding:10px 16px;display:flex;gap:8px;
+  overflow-x:auto;scrollbar-width:none;flex-shrink:0
+}
+.filter-bar::-webkit-scrollbar{display:none}
+.fbtn{
+  background:var(--bg);border:1.5px solid var(--border);
+  color:var(--muted);font-family:'Heebo',sans-serif;
+  font-size:12px;font-weight:600;
+  padding:7px 14px;border-radius:20px;
+  cursor:pointer;white-space:nowrap;transition:all .2s
+}
+.fbtn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.cat-grid{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:12px;padding:14px 12px 80px
+}
+.prod-card{
+  background:var(--white);border-radius:var(--r);
+  overflow:hidden;cursor:pointer;
+  box-shadow:var(--card-shadow);
+  transition:transform .2s;
+  animation:fadeUp .35s ease both
+}
+.prod-card:active{transform:scale(.97)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.prod-img{
+  width:100%;aspect-ratio:1;background:#f5f5f5;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;position:relative
+}
+.prod-img img{width:85%;height:85%;object-fit:contain}
+.prod-badge{
+  position:absolute;top:8px;right:8px;
+  background:var(--accent);color:#fff;
+  font-size:9px;font-weight:700;padding:3px 8px;
+  border-radius:4px;letter-spacing:.5px
+}
+.prod-type-badge{
+  position:absolute;top:8px;left:8px;
+  background:rgba(0,0,0,.65);color:#fff;
+  font-size:9px;font-weight:600;padding:3px 7px;
+  border-radius:4px
+}
+.prod-body{padding:10px 10px 12px}
+.prod-brand{font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:3px}
+.prod-name{font-size:13px;font-weight:600;line-height:1.35;margin-bottom:8px;color:var(--text)}
+.prod-price-wrap{display:flex;align-items:baseline;gap:5px}
+.prod-price{font-size:20px;font-weight:800;color:var(--accent)}
+.prod-price-unit{font-size:11px;color:var(--muted)}
+.prod-eilat{font-size:10px;color:#27ae60;font-weight:600;background:#eafaf1;padding:2px 6px;border-radius:4px}
+
+/* ══════════════ QUIZ ══════════════ */
+#quizScreen{background:var(--white)}
+.quiz-hero{background:linear-gradient(135deg,var(--accent),#ff4444);padding:20px;color:#fff}
+.quiz-hero h2{font-size:20px;font-weight:700;margin-bottom:4px}
+.quiz-hero p{font-size:13px;opacity:.85}
+.quiz-progress-wrap{padding:16px 20px 0}
+.quiz-prog-label{display:flex;justify-content:space-between;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.quiz-prog-track{height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:24px}
+.quiz-prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),#ff6b35);border-radius:3px;transition:width .4s ease}
+.q-step{padding:0 20px;animation:fadeUp .3s ease}
+.q-num{font-size:11px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;font-weight:600}
+.q-question{font-size:22px;font-weight:700;line-height:1.25;margin-bottom:6px}
+.q-sub{font-size:13px;color:var(--muted);margin-bottom:22px;line-height:1.5}
+.q-options{display:flex;flex-direction:column;gap:10px}
+.q-opt{
+  background:var(--white);border:2px solid var(--border);
+  border-radius:14px;padding:14px 16px;
+  display:flex;align-items:center;gap:14px;
+  cursor:pointer;transition:all .2s
+}
+.q-opt:active{transform:scale(.98)}
+.q-opt.sel{border-color:var(--accent);background:#fff5f5}
+.q-opt-icon{font-size:28px;flex-shrink:0}
+.q-opt-title{font-size:14px;font-weight:600}
+.q-opt-sub{font-size:12px;color:var(--muted);margin-top:2px}
+
+/* ══════════════ RESULT ══════════════ */
+#resultScreen{background:var(--bg)}
+.result-header{background:linear-gradient(135deg,#1a1a2e,#0f3460);padding:24px 20px;color:#fff}
+.result-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;margin-bottom:12px}
+.result-header h2{font-size:22px;font-weight:700;margin-bottom:6px}
+.result-header p{font-size:13px;opacity:.75;line-height:1.5}
+.result-main-card{
+  margin:16px;background:var(--white);border-radius:16px;
+  overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.1);
+  cursor:pointer;border:2px solid var(--accent)
+}
+.result-main-img{height:200px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;position:relative}
+.result-main-img img{max-width:70%;max-height:70%;object-fit:contain}
+.result-top-pick{position:absolute;bottom:12px;right:12px;background:var(--accent);color:#fff;font-size:11px;font-weight:700;padding:5px 12px;border-radius:6px}
+.result-main-info{padding:16px}
+.result-main-brand{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:4px}
+.result-main-name{font-size:20px;font-weight:700;margin-bottom:8px}
+.result-main-desc{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:12px}
+.result-main-price{font-size:30px;font-weight:800;color:var(--accent)}
+.result-alts-title{padding:4px 20px 10px;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--muted);text-transform:uppercase}
+.result-alts{display:flex;gap:10px;padding:0 16px 20px;overflow-x:auto;scrollbar-width:none}
+.result-alts::-webkit-scrollbar{display:none}
+.alt-card{
+  background:var(--white);border:1px solid var(--border);
+  border-radius:12px;padding:12px;min-width:140px;
+  cursor:pointer;flex-shrink:0;box-shadow:var(--card-shadow)
+}
+.alt-img{height:80px;display:flex;align-items:center;justify-content:center;margin-bottom:8px}
+.alt-img img{max-width:80%;max-height:80%;object-fit:contain}
+.alt-brand{font-size:8px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:2px}
+.alt-name{font-size:11px;font-weight:600;margin-bottom:5px;line-height:1.3}
+.alt-price{font-size:16px;font-weight:800;color:var(--accent)}
+.retry-btn{margin:0 16px 20px;width:calc(100% - 32px);background:transparent;border:2px solid var(--border);color:var(--muted);font-family:'Heebo',sans-serif;font-size:14px;font-weight:600;padding:14px;border-radius:12px;cursor:pointer}
+
+/* ══════════════ DETAIL ══════════════ */
+#detailScreen{background:var(--white)}
+.det-img-wrap{background:#f8f9fa;width:100%;height:280px;display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--border);flex-shrink:0;position:relative}
+.det-img-wrap img{max-width:65%;max-height:65%;object-fit:contain}
+.det-type-chip{position:absolute;bottom:14px;right:14px;background:var(--accent);color:#fff;font-size:11px;font-weight:700;padding:5px 14px;border-radius:20px}
+.det-body{padding:0}
+.det-basic{padding:20px 18px 20px;border-bottom:1px solid var(--border)}
+.det-brand{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:5px}
+.det-name{font-size:26px;font-weight:700;line-height:1.2;margin-bottom:12px}
+.det-price-row{display:flex;align-items:baseline;gap:10px;margin-bottom:4px}
+.det-price{font-size:38px;font-weight:800;color:var(--accent)}
+.det-price-unit{font-size:16px;color:var(--muted)}
+.det-eilat-note{font-size:12px;color:#27ae60;font-weight:600;margin-bottom:16px}
+.det-desc{font-size:14px;line-height:1.7;color:#444;margin-bottom:16px}
+.spec-chips{display:flex;flex-wrap:wrap;gap:8px}
+.spec-chip{background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:11px;font-weight:600}
+.spec-chip span{color:var(--muted);margin-left:4px}
+/* Deep section */
+.scroll-hint-bar{display:flex;align-items:center;gap:8px;padding:14px 18px;font-size:11px;color:var(--muted);font-weight:600;letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid var(--border)}
+.bounce{animation:bce 1.5s infinite;display:inline-block}
+@keyframes bce{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
+.det-deep{padding:0 18px 40px}
+.det-section-title{font-size:16px;font-weight:700;margin:22px 0 12px;color:var(--dark)}
+.spec-table{width:100%;border-collapse:collapse}
+.spec-table tr{border-bottom:1px solid var(--border)}
+.spec-table tr:last-child{border-bottom:none}
+.spec-table td{padding:11px 0;font-size:13px}
+.spec-table td:first-child{color:var(--muted);width:45%}
+.spec-table td:last-child{font-weight:600;text-align:left}
+.feat-list{list-style:none;display:flex;flex-direction:column;gap:9px}
+.feat-list li{display:flex;align-items:flex-start;gap:10px;font-size:13px;line-height:1.5}
+.feat-list li::before{content:"OK";background:var(--accent);color:#fff;font-size:9px;font-weight:700;padding:2px 5px;border-radius:4px;flex-shrink:0;margin-top:2px}
+.buy-btn{
+  position:sticky;bottom:0;
+  background:var(--accent);color:#fff;
+  width:100%;padding:18px;font-size:16px;font-weight:700;
+  border:none;cursor:pointer;font-family:'Heebo',sans-serif;
+  display:flex;align-items:center;justify-content:center;gap:8px
+}
+</style>
+</head>
+<body>
+
+<!-- LANG SELECT -->
+<div id="langScreen" class="screen active">
+  <div class="lang-logo-wrap">
+    <div class="lang-logo-text">iCell</div>
+    <div class="lang-logo-sub">VACUUM CATALOG &middot; &#x05E7;&#x05D8;&#x05DC;&#x05D5;&#x05D2; &#x05E9;&#x05D5;&#x05D0;&#x05D1;&#x05D9; &#x05D0;&#x05D1;&#x05E7;</div>
+  </div>
+  <div class="lang-cards">
+    <div class="lang-card" id="btnHe">
+      <div class="lang-flag">&#x1F1EE;&#x1F1F1;</div>
+      <div class="lang-card-text">
+        <div class="lang-name" style="direction:rtl">&#x05E2;&#x05D1;&#x05E8;&#x05D9;&#x05EA;</div>
+        <div class="lang-hint" style="direction:rtl">&#x05D4;&#x05DE;&#x05E9;&#x05DA; &#x05D1;&#x05E2;&#x05D1;&#x05E8;&#x05D9;&#x05EA;</div>
+      </div>
+      <div class="lang-arrow">&#x2190;</div>
+    </div>
+    <div class="lang-card" id="btnRu">
+      <div class="lang-flag">&#x1F1F7;&#x1F1FA;</div>
+      <div class="lang-card-text">
+        <div class="lang-name">&#x0420;&#x0423;&#x0421;&#x0421;&#x041A;&#x0418;&#x0419;</div>
+        <div class="lang-hint">&#x041F;&#x0440;&#x043E;&#x0434;&#x043E;&#x043B;&#x0436;&#x0438;&#x0442;&#x044C; &#x043D;&#x0430; &#x0440;&#x0443;&#x0441;&#x0441;&#x043A;&#x043E;&#x043C;</div>
+      </div>
+      <div class="lang-arrow">&#x2192;</div>
+    </div>
+  </div>
+</div>
+
+<!-- SPLASH -->
+<div id="splashScreen" class="screen">
+  <div class="splash-header">
+    <div class="splash-brand">iCell &#x05D0;&#x05D9;&#x05DC;&#x05EA;</div>
+    <div class="splash-tagline" id="splashTagline">&#x05E9;&#x05D5;&#x05D0;&#x05D1;&#x05D9; &#x05D0;&#x05D1;&#x05E7; &#x05D1;&#x05DE;&#x05D7;&#x05D9;&#x05E8;&#x05D9; &#x05D0;&#x05D9;&#x05DC;&#x05EA; &#x05E4;&#x05D8;&#x05D5;&#x05E8; &#x05DE;&#x05DE;&#x05E2;&#x05DE;</div>
+  </div>
+  <div class="splash-hero">
+    <h1 id="splashH1">&#x05D0;&#x05D9;&#x05DA; &#x05EA;&#x05E8;&#x05E6;&#x05D4; &#x05DC;&#x05D4;&#x05EA;&#x05E7;&#x05D3;&#x05DD;?</h1>
+    <p id="splashP">&#x05D1;&#x05D7;&#x05E8; &#x05D0;&#x05D9;&#x05DA; &#x05DC;&#x05E2;&#x05D1;&#x05D5;&#x05E8 &#x05DC;&#x05E7;&#x05D8;&#x05DC;&#x05D5;&#x05D2; &#x05D4;&#x05DE;&#x05DC;&#x05D0;</p>
+    <div class="splash-modes">
+      <div class="splash-mode catalog" id="btnCatalog">
+        <div class="splash-mode-icon">&#x1F4CB;</div>
+        <div>
+          <div class="splash-mode-title" id="lblCatalog">&#x05E7;&#x05D8;&#x05DC;&#x05D5;&#x05D2; &#x05DE;&#x05DC;&#x05D0;</div>
+          <div class="splash-mode-desc" id="dscCatalog">&#x05DB;&#x05DC; 16 &#x05D4;&#x05D3;&#x05D2;&#x05DE;&#x05D9;&#x05DD; &#x05E2;&#x05DD; &#x05DE;&#x05D7;&#x05D9;&#x05E8;&#x05D9; &#x05D0;&#x05D9;&#x05DC;&#x05EA;</div>
+        </div>
+        <div class="splash-mode-arrow">&#x2190;</div>
+      </div>
+      <div class="splash-mode quiz" id="btnQuiz">
+        <div class="splash-mode-icon">&#x1F3AF;</div>
+        <div>
+          <div class="splash-mode-title" id="lblQuiz">&#x05DE;&#x05E6;&#x05D0; &#x05DC;&#x05D9; &#x05D0;&#x05EA; &#x05D4;&#x05DE;&#x05EA;&#x05D0;&#x05D9;&#x05DD;</div>
+          <div class="splash-mode-desc" id="dscQuiz">4 &#x05E9;&#x05D0;&#x05DC;&#x05D5;&#x05EA; &#x05DC;&#x05D4;&#x05DE;&#x05DC;&#x05E6;&#x05D4; &#x05D0;&#x05D9;&#x05E9;&#x05D9;&#x05EA;</div>
+        </div>
+        <div class="splash-mode-arrow">&#x2190;</div>
+      </div>
+    </div>
+    <button class="lang-switch-btn" id="splashLangBtn">&#x1F310; &#x05E9;&#x05E0;&#x05D4; &#x05E9;&#x05E4;&#x05D4;</button>
+  </div>
+</div>
+
+<!-- CATALOG -->
+<div id="catalogScreen" class="screen">
+  <div class="top-bar">
+    <div class="back-btn" id="catBack">&#x2190;</div>
+    <div class="top-bar-brand">iCell</div>
+    <div class="lang-btn" id="catLang">&#x1F310;</div>
+  </div>
+  <div class="filter-bar" id="filterBar"></div>
+  <div class="cat-grid" id="catGrid"></div>
+</div>
+
+<!-- QUIZ -->
+<div id="quizScreen" class="screen">
+  <div class="top-bar">
+    <div class="back-btn" id="quizBack">&#x2190;</div>
+    <div class="top-bar-brand" id="quizTitle">&#x05D4;&#x05EA;&#x05D0;&#x05DE;&#x05D4; &#x05D0;&#x05D9;&#x05E9;&#x05D9;&#x05EA;</div>
+    <div class="lang-btn" id="quizLang">&#x1F310;</div>
+  </div>
+  <div class="quiz-hero">
+    <h2 id="quizHeroH">&#x05DE;&#x05E6;&#x05D0; &#x05DC;&#x05DA; &#x05D0;&#x05EA; &#x05E9;&#x05D5;&#x05D0;&#x05D1; &#x05D4;&#x05D0;&#x05D1;&#x05E7; &#x05D4;&#x05DE;&#x05EA;&#x05D0;&#x05D9;&#x05DD;</h2>
+    <p id="quizHeroP">&#x05E2;&#x05E0;&#x05D4; &#x05E2;&#x05DC; 4 &#x05E9;&#x05D0;&#x05DC;&#x05D5;&#x05EA; &#x05E7;&#x05E6;&#x05E8;&#x05D5;&#x05EA;</p>
+  </div>
+  <div class="quiz-progress-wrap">
+    <div class="quiz-prog-label"><span id="progLbl">&#x05D4;&#x05EA;&#x05E7;&#x05D3;&#x05DE;&#x05D5;&#x05EA;</span><span id="progTxt">1/4</span></div>
+    <div class="quiz-prog-track"><div class="quiz-prog-fill" id="progFill" style="width:25%"></div></div>
+  </div>
+  <div id="quizStep" class="q-step"></div>
+</div>
+
+<!-- RESULT -->
+<div id="resultScreen" class="screen">
+  <div class="top-bar">
+    <div class="back-btn" id="resBack">&#x2190;</div>
+    <div class="top-bar-brand" id="resTitle">&#x05D4;&#x05DE;&#x05DC;&#x05E6;&#x05D4;</div>
+    <div class="lang-btn" id="resLang">&#x1F310;</div>
+  </div>
+  <div class="result-header">
+    <div class="result-badge" id="resBadge">&#x2B50; &#x05E0;&#x05D1;&#x05D7;&#x05E8; &#x05E2;&#x05D1;&#x05D5;&#x05E8;&#x05DA;</div>
+    <h2 id="resName"></h2>
+    <p id="resWhy"></p>
+  </div>
+  <div class="result-main-card" id="resMain"></div>
+  <div class="result-alts-title" id="alsoTitle">&#x05E9;&#x05E7;&#x05D5;&#x05DC; &#x05D2;&#x05DD;</div>
+  <div class="result-alts" id="resAlts"></div>
+  <button class="retry-btn" id="retryBtn">&#x21BA; &#x05D4;&#x05EA;&#x05D7;&#x05DC; &#x05DE;&#x05D7;&#x05D3;&#x05E9;</button>
+</div>
+
+<!-- DETAIL -->
+<div id="detailScreen" class="screen">
+  <div class="top-bar">
+    <div class="back-btn" id="detBack">&#x2190;</div>
+    <div class="top-bar-brand" id="detTopName">iCell</div>
+  </div>
+  <div class="det-img-wrap" id="detImgWrap">
+    <div class="det-type-chip" id="detTypeChip"></div>
+  </div>
+  <div class="det-body">
+    <div class="det-basic" id="detBasic"></div>
+    <div class="scroll-hint-bar" id="scrollHint">
+      <span class="bounce">&#x2193;</span>
+      <span id="scrollHintTxt">&#x05E4;&#x05E8;&#x05D8;&#x05D9;&#x05DD; &#x05E0;&#x05D5;&#x05E1;&#x05E4;&#x05D9;&#x05DD;</span>
+    </div>
+    <div class="det-deep" id="detDeep"></div>
+    <button class="buy-btn" id="buyBtn" onclick="">&#x1F6D2; &#x05DC;&#x05E8;&#x05DB;&#x05D9;&#x05E9;&#x05D4; &#x05D1;&#x05D0;&#x05EA;&#x05E8;</button>
+  </div>
+</div>
+
+<script>
+var L="he", CF="all", QA={}, QS=0, FROM="catalogScreen";
+
+var UI={
+he:{
+  dir:"rtl",lang:"he",
+  splashTagline:"\u05E9\u05D5\u05D0\u05D1\u05D9 \u05D0\u05D1\u05E7 \u05D1\u05DE\u05D7\u05D9\u05E8\u05D9 \u05D0\u05D9\u05DC\u05EA \u05E4\u05D8\u05D5\u05E8 \u05DE\u05DE\u05E2\u05DE",
+  splashH1:"\u05D0\u05D9\u05DA \u05EA\u05E8\u05E6\u05D4 \u05DC\u05D4\u05EA\u05E7\u05D3\u05DD?",
+  splashP:"\u05D1\u05D7\u05E8 \u05D0\u05D9\u05DA \u05DC\u05E2\u05D1\u05D5\u05E8 \u05DC\u05E7\u05D8\u05DC\u05D5\u05D2 \u05D4\u05DE\u05DC\u05D0",
+  lblCatalog:"\u05E7\u05D8\u05DC\u05D5\u05D2 \u05DE\u05DC\u05D0",
+  dscCatalog:"\u05DB\u05DC 16 \u05D4\u05D3\u05D2\u05DE\u05D9\u05DD \u05E2\u05DD \u05DE\u05D7\u05D9\u05E8\u05D9 \u05D0\u05D9\u05DC\u05EA",
+  lblQuiz:"\u05DE\u05E6\u05D0 \u05DC\u05D9 \u05D0\u05EA \u05D4\u05DE\u05EA\u05D0\u05D9\u05DD",
+  dscQuiz:"4 \u05E9\u05D0\u05DC\u05D5\u05EA \u05DC\u05D4\u05DE\u05DC\u05E6\u05D4 \u05D0\u05D9\u05E9\u05D9\u05EA",
+  langSwitch:"\uD83C\uDF10 \u05E9\u05E0\u05D4 \u05E9\u05E4\u05D4",
+  quizTitle:"\u05D4\u05EA\u05D0\u05DE\u05D4 \u05D0\u05D9\u05E9\u05D9\u05EA",
+  quizHeroH:"\u05DE\u05E6\u05D0 \u05DC\u05DA \u05D0\u05EA \u05E9\u05D5\u05D0\u05D1 \u05D4\u05D0\u05D1\u05E7 \u05D4\u05DE\u05EA\u05D0\u05D9\u05DD",
+  quizHeroP:"\u05E2\u05E0\u05D4 \u05E2\u05DC 4 \u05E9\u05D0\u05DC\u05D5\u05EA \u05E7\u05E6\u05E8\u05D5\u05EA",
+  resTitle:"\u05D4\u05DE\u05DC\u05E6\u05D4",
+  resBadge:"\u2B50 \u05E0\u05D1\u05D7\u05E8 \u05E2\u05D1\u05D5\u05E8\u05DA",
+  alsoTitle:"\u05E9\u05E7\u05D5\u05DC \u05D2\u05DD",
+  retry:"\u21BA \u05D4\u05EA\u05D7\u05DC \u05DE\u05D7\u05D3\u05E9",
+  yourChoice:"\u05D4\u05D1\u05D7\u05D9\u05E8\u05D4 \u05E9\u05DC\u05DA",
+  scrollHint:"\u05E4\u05E8\u05D8\u05D9\u05DD \u05E0\u05D5\u05E1\u05E4\u05D9\u05DD",
+  specTitle:"\u05DE\u05E4\u05E8\u05D8 \u05D8\u05DB\u05E0\u05D9",
+  featTitle:"\u05D9\u05EA\u05E8\u05D5\u05E0\u05D5\u05EA",
+  eilatNote:"\u05DE\u05D7\u05D9\u05E8 \u05D0\u05D9\u05DC\u05EA \u05E4\u05D8\u05D5\u05E8 \u05DE\u05DE\u05E2\u05DD",
+  buyBtn:"\uD83D\uDED2 \u05DC\u05E8\u05DB\u05D9\u05E9\u05D4 \u05D1\u05D0\u05EA\u05E8",
+  progLbl:"\u05D4\u05EA\u05E7\u05D3\u05DE\u05D5\u05EA",
+  qLbl:"\u05E9\u05D0\u05DC\u05D4",
+  fAll:"\u05D4\u05DB\u05DC", fRob:"\u05E8\u05D5\u05D1\u05D5\u05D8\u05D9\u05DD", fWet:"\u05E9\u05D5\u05D8\u05E4\u05D9\u05DD", fCord:"\u05D0\u05DC\u05D7\u05D5\u05D8\u05D9\u05D9\u05DD",
+  sType:"\u05E1\u05D5\u05D2", sSuc:"\u05E2\u05D5\u05E6\u05DE\u05EA \u05E9\u05D0\u05D9\u05D1\u05D4", sWt:"\u05DE\u05E9\u05E7\u05DC", sFlt:"\u05E1\u05D9\u05E0\u05D5\u05DF", sNs:"\u05E8\u05E2\u05E9", sRt:"\u05E1\u05D5\u05DC\u05DC\u05D4",
+  forArea:"\u05E2\u05D1\u05D5\u05E8", bestIn:"\u05D4\u05D8\u05D5\u05D1 \u05D1\u05D9\u05D5\u05EA\u05E8", inBudget:"\u05D1\u05EA\u05E7\u05E6\u05D9\u05D1 \u05E9\u05DC\u05DA.",
+  areaS:"\u05E9\u05D8\u05D7 \u05E7\u05D8\u05DF", areaM:"\u05D3\u05D9\u05E8\u05D4 \u05E8\u05D2\u05D9\u05DC\u05D4", areaL:"\u05D1\u05D9\u05EA \u05D2\u05D3\u05D5\u05DC",
+  algN:"", algL:" \u05E2\u05DD \u05E1\u05D9\u05E0\u05D5\u05DF \u05D8\u05D5\u05D1", algS:" \u05E2\u05DD HEPA \u05DE\u05E7\u05E1\u05D9\u05DE\u05DC\u05D9",
+  tR:"\u05E8\u05D5\u05D1\u05D5\u05D8", tW:"\u05E9\u05D5\u05D8\u05E3", tC:"\u05D0\u05DC\u05D7\u05D5\u05D8\u05D9",
+  tLbl:{"\u05E8\u05D5\u05D1\u05D5\u05D8":"\u05E8\u05D5\u05D1\u05D5\u05D8","\u05E9\u05D5\u05D8\u05E3":"\u05E9\u05D5\u05D8\u05E3","\u05D0\u05DC\u05D7\u05D5\u05D8\u05D9":"\u05D0\u05DC\u05D7\u05D5\u05D8\u05D9","\u0440\u043e\u0431\u043e\u0442":"\u05E8\u05D5\u05D1\u05D5\u05D8","\u043c\u043e\u044e\u0449\u0438\u0439":"\u05E9\u05D5\u05D8\u05E3","\u0431\u0435\u0441\u043f\u0440\u043e\u0432\u043e\u0434\u043d\u043e\u0439":"\u05D0\u05DC\u05D7\u05D5\u05D8\u05D9"},
+  Q:[
+    {id:"type",q:"\u05E8\u05D5\u05D1\u05D5\u05D8 \u05D0\u05D5 \u05D9\u05D3\u05E0\u05D9?",sub:"\u05D6\u05D5 \u05D4\u05D1\u05D7\u05D9\u05E8\u05D4 \u05D4\u05DB\u05D9 \u05D7\u05E9\u05D5\u05D1\u05D4.",opts:[
+      {ic:"\uD83E\uDD16",t:"\u05E8\u05D5\u05D1\u05D5\u05D8",s:"\u05DE\u05E0\u05E7\u05D4 \u05DC\u05D1\u05D3 \u05D1\u05DC\u05D9 \u05DE\u05D0\u05DE\u05E5",v:3},
+      {ic:"\uD83D\uDCA7",t:"\u05E9\u05D5\u05D8\u05E3 \u05E8\u05E6\u05E4\u05D4",s:"\u05D9\u05D1\u05E9 + \u05E8\u05D8\u05D5\u05D1 \u05D1\u05D9\u05D7\u05D3",v:4},
+      {ic:"\uD83D\uDD0B",t:"\u05D0\u05DC\u05D7\u05D5\u05D8\u05D9",s:"\u05E7\u05DC \u05D5\u05DE\u05D4\u05D9\u05E8",v:2}
+    ]},
+    {id:"floors",q:"\u05E1\u05D5\u05D2 \u05D4\u05E8\u05E6\u05E4\u05D5\u05EA?",sub:"\u05DE\u05E9\u05E4\u05D9\u05E2 \u05E2\u05DC \u05D4\u05DE\u05D1\u05E8\u05E9\u05EA.",opts:[
+      {ic:"\uD83E\uDDF8",t:"\u05E9\u05D8\u05D9\u05D7\u05D9\u05DD",s:"\u05E8\u05D5\u05D1 \u05D4\u05E8\u05E6\u05E4\u05D5\u05EA \u05E9\u05D8\u05D9\u05D7",v:1},
+      {ic:"\uD83E\uDEF5",t:"\u05E7\u05E9\u05D9\u05DD",s:"\u05E8\u05E6\u05E4\u05D5\u05EA, \u05DC\u05DE\u05D9\u05E0\u05D8, \u05E4\u05E8\u05E7\u05D8",v:2},
+      {ic:"\uD83C\uDFE0",t:"\u05DE\u05E2\u05D5\u05E8\u05D1",s:"\u05D2\u05DD \u05E9\u05D8\u05D9\u05D7\u05D9\u05DD \u05D5\u05D2\u05DD \u05E7\u05E9\u05D9\u05DD",v:3}
+    ]},
+    {id:"area",q:"\u05E9\u05D8\u05D7 \u05D4\u05D1\u05D9\u05EA?",sub:"\u05DE\u05E9\u05E4\u05D9\u05E2 \u05E2\u05DC \u05E1\u05D5\u05D2 \u05D5\u05E2\u05D5\u05E6\u05DE\u05D4.",opts:[
+      {ic:"\uD83C\uDFE0",t:"\u05E2\u05D3 70 \u05DE\"\u05E8",s:"1-2 \u05D7\u05D3\u05E8\u05D9\u05DD",v:1},
+      {ic:"\uD83C\uDFE1",t:"70-130 \u05DE\"\u05E8",s:"\u05D3\u05D9\u05E8\u05D4 \u05E8\u05D2\u05D9\u05DC\u05D4",v:2},
+      {ic:"\uD83C\uDFD8\uFE0F",t:"\u05DE\u05E2\u05DC 130 \u05DE\"\u05E8",s:"\u05D1\u05D9\u05EA \u05D2\u05D3\u05D5\u05DC",v:3}
+    ]},
+    {id:"pets",q:"\u05D9\u05E9 \u05D7\u05D9\u05D5\u05EA \u05D1\u05D9\u05EA?",sub:"\u05E9\u05D9\u05E2\u05E8 \u05DE\u05E9\u05E4\u05D9\u05E2 \u05E2\u05DC \u05D1\u05D7\u05D9\u05E8\u05EA \u05D4\u05DE\u05D1\u05E8\u05E9\u05EA.",opts:[
+      {ic:"\uD83D\uDC31",t:"\u05DB\u05DF, \u05D7\u05EA\u05D5\u05DC/\u05DB\u05DC\u05D1",s:"\u05E6\u05E8\u05D9\u05DA \u05DE\u05D1\u05E8\u05E9\u05EA \u05D0\u05E0\u05D8\u05D9-\u05E1\u05D1\u05DA",v:2},
+      {ic:"\uD83D\uDE0A",t:"\u05DC\u05D0",s:"\u05DE\u05D1\u05E8\u05E9\u05EA \u05E8\u05D2\u05D9\u05DC\u05D4",v:1}
+    ]}
+  ]
+},
+ru:{
+  dir:"ltr",lang:"ru",
+  splashTagline:"\u041f\u044b\u043b\u0435\u0441\u043e\u0441\u044b \u043f\u043e \u0446\u0435\u043d\u0430\u043c \u042d\u0439\u043b\u0430\u0442\u0430 \u0431\u0435\u0437 \u041d\u0414\u0421",
+  splashH1:"\u041a\u0430\u043a \u0445\u043e\u0442\u0438\u0442\u0435 \u043f\u0440\u043e\u0434\u043e\u043b\u0436\u0438\u0442\u044c?",
+  splashP:"\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u0441\u043f\u043e\u0441\u043e\u0431 \u043f\u0435\u0440\u0435\u0445\u043e\u0434\u0430 \u043a \u043a\u0430\u0442\u0430\u043b\u043e\u0433\u0443",
+  lblCatalog:"\u0421\u041c\u041e\u0422\u0420\u0415\u0422\u042c \u041a\u0410\u0422\u0410\u041b\u041e\u0413",
+  dscCatalog:"\u0412\u0441\u0435 16 \u043c\u043e\u0434\u0435\u043b\u0435\u0439 \u0441 \u0446\u0435\u043d\u0430\u043c\u0438 \u042d\u0439\u043b\u0430\u0442\u0430",
+  lblQuiz:"\u041f\u041e\u0414\u041e\u0411\u0420\u0410\u0422\u042c \u0414\u041b\u042f \u041c\u0415\u041d\u042f",
+  dscQuiz:"4 \u0432\u043e\u043f\u0440\u043e\u0441\u0430 \u2014 \u043f\u0435\u0440\u0441\u043e\u043d\u0430\u043b\u044c\u043d\u0430\u044f \u0440\u0435\u043a\u043e\u043c\u0435\u043d\u0434\u0430\u0446\u0438\u044f",
+  langSwitch:"\uD83C\uDF10 \u0421\u043c\u0435\u043d\u0438\u0442\u044c \u044f\u0437\u044b\u043a",
+  quizTitle:"\u041f\u041e\u0414\u0411\u041e\u0420",
+  quizHeroH:"\u041d\u0430\u0439\u0434\u0451\u043c \u0432\u0430\u0448 \u043f\u044b\u043b\u0435\u0441\u043e\u0441",
+  quizHeroP:"\u041e\u0442\u0432\u0435\u0442\u044c\u0442\u0435 \u043d\u0430 4 \u0432\u043e\u043f\u0440\u043e\u0441\u0430",
+  resTitle:"\u0420\u0415\u041a\u041e\u041c\u0415\u041d\u0414\u0410\u0426\u0418\u042f",
+  resBadge:"\u2B50 \u041f\u043e\u0434\u043e\u0431\u0440\u0430\u043d\u043e \u0434\u043b\u044f \u0432\u0430\u0441",
+  alsoTitle:"\u0422\u0410\u041a\u0416\u0415 \u0420\u0410\u0421\u0421\u041c\u041e\u0422\u0420\u0418\u0422\u0415",
+  retry:"\u21BA \u041f\u0440\u043e\u0439\u0442\u0438 \u0437\u0430\u043d\u043e\u0432\u043e",
+  yourChoice:"\u0412\u0430\u0448 \u0432\u044b\u0431\u043e\u0440",
+  scrollHint:"\u041f\u043e\u0434\u0440\u043e\u0431\u043d\u0435\u0435",
+  specTitle:"\u0425\u0410\u0420\u0410\u041a\u0422\u0415\u0420\u0418\u0421\u0422\u0418\u041a\u0418",
+  featTitle:"\u041e\u0421\u041e\u0411\u0415\u041d\u041d\u041e\u0421\u0422\u0418",
+  eilatNote:"\u0426\u0435\u043d\u0430 \u042d\u0439\u043b\u0430\u0442 \u0431\u0435\u0437 \u041d\u0414\u0421",
+  buyBtn:"\uD83D\uDED2 \u041a\u0443\u043f\u0438\u0442\u044c \u043d\u0430 \u0441\u0430\u0439\u0442\u0435",
+  progLbl:"\u041f\u0420\u041e\u0413\u0420\u0415\u0421\u0421",
+  qLbl:"\u0412\u041e\u041f\u0420\u041e\u0421",
+  fAll:"\u0412\u0441\u0435", fRob:"\u0420\u043e\u0431\u043e\u0442\u044b", fWet:"\u041c\u043e\u044e\u0449\u0438\u0435", fCord:"\u0411\u0435\u0441\u043f\u0440\u043e\u0432\u043e\u0434\u043d\u044b\u0435",
+  sType:"\u0422\u0438\u043f", sSuc:"\u0412\u0441\u0430\u0441\u044b\u0432\u0430\u043d\u0438\u0435", sWt:"\u0412\u0435\u0441", sFlt:"\u0424\u0438\u043b\u044c\u0442\u0440", sNs:"\u0428\u0443\u043c", sRt:"\u0411\u0430\u0442\u0430\u0440\u0435\u044f",
+  forArea:"\u0414\u043b\u044f", bestIn:"\u043b\u0443\u0447\u0448\u0438\u0439", inBudget:"\u0432 \u0432\u0430\u0448\u0435\u043c \u0431\u044e\u0434\u0436\u0435\u0442\u0435.",
+  areaS:"\u043d\u0435\u0431\u043e\u043b\u044c\u0448\u043e\u0439 \u043f\u043b\u043e\u0449\u0430\u0434\u0438", areaM:"\u0441\u0442\u0430\u043d\u0434\u0430\u0440\u0442\u043d\u043e\u0439 \u043a\u0432\u0430\u0440\u0442\u0438\u0440\u044b", areaL:"\u0431\u043e\u043b\u044c\u0448\u043e\u0433\u043e \u0434\u043e\u043c\u0430",
+  algN:"", algL:" \u0441 \u0445\u043e\u0440\u043e\u0448\u0435\u0439 \u0444\u0438\u043b\u044c\u0442\u0440\u0430\u0446\u0438\u0435\u0439", algS:" \u0441 \u043c\u0430\u043a\u0441. \u0444\u0438\u043b\u044c\u0442\u0440\u0430\u0446\u0438\u0435\u0439",
+  tR:"\u0440\u043e\u0431\u043e\u0442", tW:"\u043c\u043e\u044e\u0449\u0438\u0439", tC:"\u0431\u0435\u0441\u043f\u0440\u043e\u0432\u043e\u0434\u043d\u043e\u0439",
+  tLbl:{"\u0440\u043e\u0431\u043e\u0442":"\u0440\u043e\u0431\u043e\u0442","\u043c\u043e\u044e\u0449\u0438\u0439":"\u043c\u043e\u044e\u0449\u0438\u0439","\u0431\u0435\u0441\u043f\u0440\u043e\u0432\u043e\u0434\u043d\u043e\u0439":"\u0431\u0435\u0441\u043f\u0440\u043e\u0432\u043e\u0434\u043d\u043e\u0439"},
+  Q:[
+    {id:"type",q:"\u0420\u041e\u0411\u041e\u0422 \u0418\u041b\u0418 \u0420\u0423\u0427\u041d\u041e\u0419?",sub:"\u0421\u0430\u043c\u044b\u0439 \u0432\u0430\u0436\u043d\u044b\u0439 \u0432\u044b\u0431\u043e\u0440.",opts:[
+      {ic:"\uD83E\uDD16",t:"\u0420\u043e\u0431\u043e\u0442",s:"\u0421\u0430\u043c \u0443\u0431\u0435\u0440\u0451\u0442\u0441\u044f",v:3},
+      {ic:"\uD83D\uDCA7",t:"\u041c\u043e\u0439\u043a\u0430 \u043f\u043e\u043b\u0430",s:"\u0412\u043b\u0430\u0436\u043d\u0430\u044f + \u0441\u0443\u0445\u0430\u044f",v:4},
+      {ic:"\uD83D\uDD0B",t:"\u0411\u0435\u0441\u043f\u0440\u043e\u0432\u043e\u0434\u043d\u043e\u0439",s:"\u041b\u0451\u0433\u043a\u0438\u0439, \u0431\u044b\u0441\u0442\u0440\u044b\u0439",v:2}
+    ]},
+    {id:"floors",q:"\u0422\u0418\u041f \u041f\u041e\u041b\u041e\u0412?",sub:"\u0412\u043b\u0438\u044f\u0435\u0442 \u043d\u0430 \u0449\u0451\u0442\u043a\u0443.",opts:[
+      {ic:"\uD83E\uDDF8",t:"\u041a\u043e\u0432\u0440\u044b",s:"\u0411\u043e\u043b\u044c\u0448\u0438\u043d\u0441\u0442\u0432\u043e \u043f\u043e\u043b\u043e\u0432 - \u043a\u043e\u0432\u0451\u0440",v:1},
+      {ic:"\uD83E\uDEF5",t:"\u0422\u0432\u0451\u0440\u0434\u044b\u0435",s:"\u041f\u043b\u0438\u0442\u043a\u0430, \u043b\u0430\u043c\u0438\u043d\u0430\u0442, \u043f\u0430\u0440\u043a\u0435\u0442",v:2},
+      {ic:"\uD83C\uDFE0",t:"\u0421\u043c\u0435\u0448\u0430\u043d\u043d\u044b\u0435",s:"\u0415\u0441\u0442\u044c \u0438 \u043a\u043e\u0432\u0440\u044b \u0438 \u0442\u0432\u0451\u0440\u0434\u044b\u0435",v:3}
+    ]},
+    {id:"area",q:"\u041f\u041b\u041e\u0429\u0410\u0414\u042c \u0414\u041e\u041c\u0410?",sub:"\u0412\u043b\u0438\u044f\u0435\u0442 \u043d\u0430 \u043c\u043e\u0449\u043d\u043e\u0441\u0442\u044c.",opts:[
+      {ic:"\uD83C\uDFE0",t:"\u0414\u043e 70 \u043c\u00b2",s:"1-2 \u043a\u043e\u043c\u043d\u0430\u0442\u044b",v:1},
+      {ic:"\uD83C\uDFE1",t:"70-130 \u043c\u00b2",s:"\u0421\u0442\u0430\u043d\u0434\u0430\u0440\u0442\u043d\u0430\u044f",v:2},
+      {ic:"\uD83C\uDFD8\uFE0F",t:"\u0411\u043e\u043b\u044c\u0448\u0435 130 \u043c\u00b2",s:"\u0411\u043e\u043b\u044c\u0448\u043e\u0439 \u0434\u043e\u043c",v:3}
+    ]},
+    {id:"pets",q:"\u0415\u0421\u0422\u042c \u0416\u0418\u0412\u041e\u0422\u041d\u042b\u0415?",sub:"\u0428\u0435\u0440\u0441\u0442\u044c \u0432\u043b\u0438\u044f\u0435\u0442 \u043d\u0430 \u0432\u044b\u0431\u043e\u0440 \u0449\u0451\u0442\u043a\u0438.",opts:[
+      {ic:"\uD83D\uDC31",t:"\u0414\u0430, \u043a\u043e\u0448\u043a\u0430/\u0441\u043e\u0431\u0430\u043a\u0430",s:"\u041d\u0443\u0436\u043d\u0430 Anti-Tangle \u0449\u0451\u0442\u043a\u0430",v:2},
+      {ic:"\uD83D\uDE0A",t:"\u041d\u0435\u0442",s:"\u0421\u0442\u0430\u043d\u0434\u0430\u0440\u0442\u043d\u0430\u044f \u0449\u0451\u0442\u043a\u0430",v:1}
+    ]}
+  ]
+}
+};
+
+
+var PRODS=[
+{id:1,brand:"Roborock",name:"Saros 10R",type:"робот",price:3549,suc:"22 000 Pa",pct:62,wt:"4.1 kg",ns:"62 dB",flt:"Auto",rt:"180 min",best:true,sA:2,sAl:2,sT:3,img:"https://www.i-cell.co.il/cdn/shop/files/5v1_6207e612-3fbf-4daa-bb24-5e5426acffe2.png?v=1755503379&width=400",url:"https://www.i-cell.co.il/products/33502"},
+{id:2,brand:"Roborock",name:"Saros 20 Complete",type:"робот",price:4319,suc:"36 000 Pa",pct:100,wt:"4.5 kg",ns:"65 dB",flt:"Auto",rt:"-",best:false,sA:3,sAl:3,sT:3,img:"https://www.i-cell.co.il/cdn/shop/files/5ae_ec9163d6-21fc-4118-bcd8-cbd438f15bb1.png?v=1755503383&width=400",url:"https://www.i-cell.co.il/products/33362"},
+{id:3,brand:"Roborock",name:"Saros 20 Sonic",type:"робот",price:4399,suc:"36 000 Pa",pct:100,wt:"4.3 kg",ns:"63 dB",flt:"Auto",rt:"-",best:false,sA:3,sAl:3,sT:3,img:"https://www.i-cell.co.il/cdn/shop/files/5v1_6207e612-3fbf-4daa-bb24-5e5426acffe2.png?v=1755503379&width=400",url:"https://www.i-cell.co.il/products/33363"},
+{id:4,brand:"Roborock",name:"Q REVO EDGE 2 PRO",type:"робот",price:3049,suc:"18 500 Pa",pct:52,wt:"3.9 kg",ns:"65 dB",flt:"Auto",rt:"-",best:false,sA:2,sAl:2,sT:3,img:"https://www.i-cell.co.il/cdn/shop/files/5v1_6207e612-3fbf-4daa-bb24-5e5426acffe2.png?v=1755503379&width=400",url:"https://www.i-cell.co.il/collections/roborock-vacuum-cleaners"},
+{id:5,brand:"Roborock",name:"F25 ACE (CE)",type:"моющий",price:1270,suc:"20 000 Pa",pct:56,wt:"5.3 kg",ns:"74 dB",flt:"Tank",rt:"60 min",best:false,sA:1,sAl:1,sT:4,img:"https://www.i-cell.co.il/cdn/shop/files/33.jpg?v=1775460886&width=400",url:"https://www.i-cell.co.il/products/31720"},
+{id:6,brand:"Roborock",name:"F25 ACE COMBO",type:"моющий",price:1990,suc:"20 000 Pa",pct:56,wt:"5.5 kg",ns:"74 dB",flt:"Tank",rt:"60 min",best:false,sA:2,sAl:1,sT:4,img:"https://www.i-cell.co.il/cdn/shop/files/f25acecombo_faa7da45-a78e-4376-bed1-2f92b1b8216a.png?v=1755503372&width=700",url:"https://www.i-cell.co.il/products/31730"},
+{id:7,brand:"Roborock",name:"F25 ACE PRO",type:"моющий",price:2249,suc:"25 000 Pa",pct:70,wt:"5.8 kg",ns:"74 dB",flt:"Tank",rt:"60 min",best:true,sA:2,sAl:2,sT:4,img:"https://www.i-cell.co.il/cdn/shop/files/33.jpg?v=1775460886&width=400",url:"https://www.i-cell.co.il/products/33330"},
+{id:8,brand:"Roborock",name:"F25 ULTRA",type:"моющий",price:2099,suc:"20 000 Pa",pct:56,wt:"5.6 kg",ns:"74 dB",flt:"Tank",rt:"60 min",best:false,sA:2,sAl:3,sT:4,img:"https://www.i-cell.co.il/cdn/shop/files/33.jpg?v=1775460886&width=400",url:"https://www.i-cell.co.il/products/33266"},
+{id:9,brand:"Dreame",name:"X50 Ultra Complete",type:"робот",price:2820,suc:"20 000 Pa",pct:56,wt:"4.2 kg",ns:"65 dB",flt:"Auto",rt:"-",best:true,sA:3,sAl:2,sT:3,img:"https://www.i-cell.co.il/cdn/shop/files/X50.jpg?v=1755503389&width=1000",url:"https://www.i-cell.co.il/products/31570"},
+{id:10,brand:"Dreame",name:"X60 Ultra Complete",type:"робот",price:3800,suc:"30 000 Pa",pct:84,wt:"4.4 kg",ns:"65 dB",flt:"Auto",rt:"-",best:false,sA:3,sAl:3,sT:3,img:"https://www.i-cell.co.il/cdn/shop/files/X50.jpg?v=1755503389&width=400",url:"https://www.i-cell.co.il/products/33366"},
+{id:11,brand:"Dreame",name:"Aqua10 Ultra Roller Complete",type:"робот",price:2959,suc:"30 000 Pa",pct:84,wt:"4.3 kg",ns:"64 dB",flt:"Auto",rt:"-",best:false,sA:3,sAl:2,sT:3,img:"https://www.i-cell.co.il/cdn/shop/files/X50.jpg?v=1755503389&width=400",url:"https://www.i-cell.co.il/products/33260"},
+{id:12,brand:"Dreame",name:"H60 GT",type:"моющий",price:1149,suc:"20 000 Pa",pct:56,wt:"4.8 kg",ns:"72 dB",flt:"Tank",rt:"45 min",best:false,sA:1,sAl:1,sT:4,img:"https://www.i-cell.co.il/cdn/shop/files/H14_1.jpg?v=1755503394&width=400",url:"https://www.i-cell.co.il/products/33419"},
+{id:13,brand:"Dreame",name:"H14",type:"моющий",price:1549,suc:"17 000 Pa",pct:47,wt:"4.3 kg",ns:"72 dB",flt:"Tank",rt:"50 min",best:false,sA:1,sAl:1,sT:4,img:"https://www.i-cell.co.il/cdn/shop/files/H14_1.jpg?v=1755503394&width=1000",url:"https://www.i-cell.co.il/products/31520"},
+{id:14,brand:"Dreame",name:"H14 Dual",type:"моющий",price:1995,suc:"18 000 Pa",pct:50,wt:"4.6 kg",ns:"72 dB",flt:"Tank",rt:"50 min",best:false,sA:2,sAl:1,sT:4,img:"https://www.i-cell.co.il/cdn/shop/files/H14-DUAIL_3.jpg?v=1755503392&width=1000",url:"https://www.i-cell.co.il/products/31530"},
+{id:15,brand:"Dreame",name:"H16 Pro Steam",type:"моющий",price:2199,suc:"28 000 Pa",pct:78,wt:"5.2 kg",ns:"74 dB",flt:"Tank",rt:"45 min",best:true,sA:2,sAl:3,sT:4,img:"https://www.i-cell.co.il/cdn/shop/files/10_1.avif?v=1755724244&width=400",url:"https://www.i-cell.co.il/products/33380"},
+{id:16,brand:"Dreame",name:"Z30",type:"беспроводной",price:1299,suc:"200W",pct:55,wt:"3.2 kg",ns:"72 dB",flt:"Tank",rt:"60 min",best:false,sA:1,sAl:2,sT:2,img:"https://www.i-cell.co.il/cdn/shop/files/Z30-A-2_944b2783-3c56-4662-ab48-116b405bc6b0.jpg?v=1755503392&width=400",url:"https://www.i-cell.co.il/products/31640"},
+{id:17,brand:"Mova",name:"V50 Ultra Complete",type:"робот",price:3099,suc:"24 000 Pa",pct:67,wt:"4.0 kg",ns:"64 dB",flt:"Auto",rt:"-",best:false,sA:2,sAl:2,sT:3,img:"https://www.i-cell.co.il/cdn/shop/files/total-front.webp?v=1755726670&width=700",url:"https://www.i-cell.co.il/products/31670"},
+{id:18,brand:"Mova",name:"V70 Ultra Complete X",type:"робот",price:5249,suc:"30 000 Pa",pct:84,wt:"4.5 kg",ns:"64 dB",flt:"Auto",rt:"-",best:false,sA:3,sAl:2,sT:3,img:"https://www.i-cell.co.il/cdn/shop/files/total-front-_-_4.webp?v=1780408887&width=700",url:"https://www.i-cell.co.il/products/33528"},
+{id:19,brand:"Mova",name:"S70 Roller",type:"робот",price:2879,suc:"28 000 Pa",pct:78,wt:"3.8 kg",ns:"65 dB",flt:"Auto",rt:"-",best:false,sA:2,sAl:1,sT:3,img:"https://www.i-cell.co.il/cdn/shop/files/item_-_600600_-_s70_roller_-_black.webp?v=1778400277&width=600",url:"https://www.i-cell.co.il/products/33498"},
+{id:20,brand:"Mova",name:"S70 Ultra Roller Complete",type:"робот",price:3890,suc:"32 000 Pa",pct:89,wt:"3.9 kg",ns:"64 dB",flt:"Auto",rt:"-",best:false,sA:2,sAl:1,sT:3,img:"https://www.i-cell.co.il/cdn/shop/files/s70_ultra_roller.webp?v=1778399684&width=450",url:"https://www.i-cell.co.il/products/33499"},
+{id:21,brand:"Mova",name:"Z60 Ultra Roller",type:"робот",price:3599,suc:"28 000 Pa",pct:78,wt:"4.2 kg",ns:"64 dB",flt:"Tank",rt:"60 min",best:false,sA:3,sAl:2,sT:4,img:"https://www.i-cell.co.il/cdn/shop/files/total-front-_-__1.webp?v=1755725838&width=700",url:"https://www.i-cell.co.il/products/31680"},
+{id:22,brand:"Mova",name:"Z70 Ultra Roller Complete",type:"робот",price:5249,suc:"30 000 Pa",pct:84,wt:"4.3 kg",ns:"64 dB",flt:"Tank",rt:"60 min",best:false,sA:3,sAl:2,sT:4,img:"https://www.i-cell.co.il/cdn/shop/files/total-left-_-__2.webp?v=1780408429&width=700",url:"https://www.i-cell.co.il/products/33548"},
+{id:23,brand:"Mova",name:"M50 Ultra",type:"моющий",price:1699,suc:"20 000 Pa",pct:56,wt:"4.5 kg",ns:"74 dB",flt:"Tank",rt:"60 min",best:false,sA:2,sAl:1,sT:4,img:"https://www.i-cell.co.il/cdn/shop/files/total-front.webp?v=1755726670&width=400",url:"https://www.i-cell.co.il/products/33236"},
+{id:25,brand:"Dyson",name:"V15s Detect Submarine",type:"моющий",price:2119,suc:"150 AW",pct:65,wt:"3.5 kg",ns:"70 dB",flt:"HEPA",rt:"60 min",best:true,sA:2,sAl:3,sT:4,img:"https://www.i-cell.co.il/cdn/shop/files/v15s_aed405b8-2cf4-41ab-9e1c-7db97dc6c64a.png?v=1755503370&width=333",url:"https://www.i-cell.co.il/products/31890"},
+{id:26,brand:"Dyson",name:"V12 Detect Slim Absolute",type:"беспроводной",price:1549,suc:"150 AW",pct:65,wt:"2.2 kg",ns:"68 dB",flt:"HEPA 99.97%",rt:"60 min",best:false,sA:2,sAl:3,sT:2,img:"https://www.i-cell.co.il/cdn/shop/files/V12_79dab377-72ac-45ec-8c00-074963026111.jpg?v=1755503374&width=271",url:"https://www.i-cell.co.il/products/31840"},
+{id:27,brand:"Shark",name:"IZ423 STRATOS IQ",type:"беспроводной",price:1599,suc:"180W",pct:50,wt:"3.4 kg",ns:"75 dB",flt:"Tank",rt:"60 min",best:false,sA:1,sAl:2,sT:2,img:"https://www.i-cell.co.il/cdn/shop/files/423_e26a5827-f9d9-490d-a367-aaf75b1af7d7.webp?v=1755503375&width=800",url:"https://www.i-cell.co.il/products/31700"}
+];
+
+function u(id){return document.getElementById(id);}
+function tl(o){return o[L]||o.he||o.ru||"";}
+function tLbl(type){var m=UI[L].tLbl;return m[type]||type;}
+function t(k){return UI[L][k]||"";}
+
+function goScreen(id){
+  document.querySelectorAll(".screen").forEach(function(s){s.classList.remove("active");});
+  u(id).classList.add("active");
+  u(id).scrollTop=0;
+}
+
+function setLang(l){
+  L=l;
+  document.documentElement.lang=l;
+  document.body.dir=UI[l].dir;
+  var ui=UI[l];
+  u("splashTagline").textContent=ui.splashTagline;
+  u("splashH1").textContent=ui.splashH1;
+  u("splashP").textContent=ui.splashP;
+  u("lblCatalog").textContent=ui.lblCatalog;
+  u("dscCatalog").textContent=ui.dscCatalog;
+  u("lblQuiz").textContent=ui.lblQuiz;
+  u("dscQuiz").textContent=ui.dscQuiz;
+  u("splashLangBtn").textContent=ui.langSwitch;
+  goScreen("splashScreen");
+}
+
+function renderCatalog(){
+  buildFilters();
+  buildGrid();
+}
+
+function buildFilters(){
+  var bar=u("filterBar");
+  bar.innerHTML="";
+  var filters=[
+    {f:"all",lbl:t("fAll")+" (27)"},
+    {f:"робот",lbl:t("fRob")},
+    {f:"моющий",lbl:t("fWet")},
+    {f:"беспроводной",lbl:t("fCord")}
+  ];
+  filters.forEach(function(fi){
+    var btn=document.createElement("button");
+    btn.className="fbtn"+(CF===fi.f?" active":"");
+    btn.textContent=fi.lbl;
+    btn.dataset.f=fi.f;
+    btn.addEventListener("click",function(){
+      CF=this.dataset.f;
+      bar.querySelectorAll(".fbtn").forEach(function(b){b.classList.remove("active");});
+      this.classList.add("active");
+      buildGrid();
+    });
+    bar.appendChild(btn);
+  });
+}
+
+function buildGrid(){
+  var grid=u("catGrid");
+  grid.innerHTML="";
+  var list=CF==="all"?PRODS:PRODS.filter(function(p){return p.type===CF;});
+  list.forEach(function(p,i){
+    var card=document.createElement("div");
+    card.className="prod-card";
+    card.style.animationDelay=(i*0.04)+"s";
+    var imgEl=document.createElement("img");
+    imgEl.src=p.img;
+    imgEl.alt=p.name;
+    imgEl.style.cssText="width:85%;height:85%;object-fit:contain;";
+    var imgWrap=document.createElement("div");
+    imgWrap.className="prod-img";
+    imgWrap.appendChild(imgEl);
+    if(p.best){var b=document.createElement("div");b.className="prod-badge";b.textContent="TOP";imgWrap.appendChild(b);}
+    var typeB=document.createElement("div");typeB.className="prod-type-badge";typeB.textContent=tLbl(p.type);imgWrap.appendChild(typeB);
+    var body=document.createElement("div");body.className="prod-body";
+    body.innerHTML=
+      "<div class='prod-brand'>"+p.brand+"</div>"+
+      "<div class='prod-name'>"+p.name+"</div>"+
+      "<div class='prod-price-wrap'>"+
+        "<span class='prod-price'>"+p.price.toLocaleString()+"</span>"+
+        "<span class='prod-price-unit'>₪</span>"+
+        "<span class='prod-eilat'>"+t("eilatNote")+"</span>"+
+      "</div>";
+    card.appendChild(imgWrap);
+    card.appendChild(body);
+    card.addEventListener("click",function(){window.open(p.url,"_blank");});
+    grid.appendChild(card);
+  });
+}
+
+function startQuiz(){
+  QA={};QS=0;
+  u("quizTitle").textContent=t("quizTitle");
+  u("quizHeroH").textContent=t("quizHeroH");
+  u("quizHeroP").textContent=t("quizHeroP");
+  renderQ();
+  goScreen("quizScreen");
+}
+
+function renderQ(){
+  var qs=UI[L].Q;var q=qs[QS];
+  u("progFill").style.width=((QS+1)/qs.length*100)+"%";
+  u("progLbl").textContent=t("progLbl");
+  u("progTxt").textContent=(QS+1)+" / "+qs.length;
+  var step=u("quizStep");
+  step.innerHTML=
+    "<div class='q-num'>"+t("qLbl")+" "+(QS+1)+"</div>"+
+    "<div class='q-question'>"+q.q+"</div>"+
+    "<div class='q-sub'>"+q.sub+"</div>"+
+    "<div class='q-options' id='qOpts'></div>";
+  var opts=u("qOpts");
+  q.opts.forEach(function(o){
+    var el=document.createElement("div");
+    el.className="q-opt"+(QA[q.id]===o.v?" sel":"");
+    el.innerHTML="<div class='q-opt-icon'>"+o.ic+"</div><div><div class='q-opt-title'>"+o.t+"</div><div class='q-opt-sub'>"+o.s+"</div></div>";
+    el.addEventListener("click",function(){
+      opts.querySelectorAll(".q-opt").forEach(function(e){e.classList.remove("sel");});
+      el.classList.add("sel");
+      QA[q.id]=o.v;
+      setTimeout(function(){QS++;if(QS>=UI[L].Q.length)showRes();else renderQ();},350);
+    });
+    opts.appendChild(el);
+  });
+}
+
+function scoreP(p){
+  var s=0,a=QA;
+  var tm={2:"беспроводной",3:"робот",4:"моющий"};
+  if(p.type===tm[a.type])s+=50;
+  if(p.sA>=(a.area||1))s+=12;
+  if(a.pets===2&&p.sAl>=2)s+=20;
+  if(a.floors===1&&p.type==="беспроводной")s+=8;
+  if(a.floors===2&&p.type==="моющий")s+=10;
+  if(p.best)s+=8;
+  return s;
+}
+
+function showRes(){
+  var sorted=PRODS.map(function(p){return Object.assign({},p,{_s:scoreP(p)});}).sort(function(a,b){return b._s-a._s;});
+  var best=sorted[0],alts=sorted.slice(1,4);
+  var ui=UI[L];
+  u("resTitle").textContent=ui.resTitle;
+  u("resBadge").textContent=ui.resBadge;
+  u("alsoTitle").textContent=ui.alsoTitle;
+  u("retryBtn").textContent=ui.retry;
+  u("resName").textContent=best.brand+" "+best.name;
+  var aM={1:ui.areaS,2:ui.areaM,3:ui.areaL};
+  var alM={1:ui.algN,2:ui.algL,3:ui.algS};
+  var tM={2:ui.tC,3:ui.tR,4:ui.tW};
+  u("resWhy").textContent=ui.forArea+" "+(aM[QA.area]||"")+(alM[QA.allergy]||"")+" — "+ui.bestIn+" "+(tM[QA.type]||tLbl(best.type))+" "+ui.inBudget+" "+tl(best.desc);
+  var rm=u("resMain");
+  var bestImg=document.createElement("img");
+  bestImg.src=best.img;
+  bestImg.alt=best.name;
+  bestImg.style.cssText="max-width:60%;max-height:60%;object-fit:contain;";
+  var imgDiv=document.createElement("div");imgDiv.className="result-main-img";imgDiv.appendChild(bestImg);
+  var topPick=document.createElement("div");topPick.className="result-top-pick";topPick.textContent=ui.yourChoice;imgDiv.appendChild(topPick);
+  var info=document.createElement("div");info.className="result-main-info";
+  info.innerHTML="<div class='result-main-brand'>"+best.brand+"</div><div class='result-main-name'>"+best.name+"</div><div class='result-main-desc'>"+tl(best.desc)+"</div><div class='result-main-price'>"+best.price.toLocaleString()+" ₪</div>";
+  rm.innerHTML="";rm.appendChild(imgDiv);rm.appendChild(info);
+  rm.addEventListener("click",function(){window.open(best.url,"_blank");});
+  var ra=u("resAlts");ra.innerHTML="";
+  alts.forEach(function(p){
+    var el=document.createElement("div");el.className="alt-card";
+    var ai=document.createElement("img");ai.src=p.img;ai.alt=p.name;ai.style.cssText="max-width:80%;max-height:80%;object-fit:contain;";
+    var aw=document.createElement("div");aw.className="alt-img";aw.appendChild(ai);
+    el.innerHTML="<div class='alt-brand'>"+p.brand+"</div><div class='alt-name'>"+p.name+"</div><div class='alt-price'>"+p.price.toLocaleString()+" ₪</div>";
+    el.insertBefore(aw,el.firstChild);
+    el.addEventListener("click",function(){window.open(p.url,"_blank");});
+    ra.appendChild(el);
+  });
+  goScreen("resultScreen");
+}
+
+function openDetail(id,fromS){
+  FROM=fromS;
+  var p=null;for(var i=0;i<PRODS.length;i++){if(PRODS[i].id===id){p=PRODS[i];break;}}
+  u("detBack").onclick=function(){goScreen(FROM);};
+  u("detTopName").textContent=p.brand;
+  u("detTypeChip").textContent=tLbl(p.type);
+  var iw=u("detImgWrap");
+  var existing=iw.querySelector("img");
+  if(existing)iw.removeChild(existing);
+  var di=document.createElement("img");di.src=p.img;di.alt=p.name;di.style.cssText="max-width:65%;max-height:65%;object-fit:contain;";
+  iw.insertBefore(di,iw.firstChild);
+  var ui=UI[L];
+  u("scrollHintTxt").textContent=ui.scrollHint;
+  u("detBasic").innerHTML=
+    "<div class='det-brand'>"+p.brand+"</div>"+
+    "<div class='det-name'>"+p.name+"</div>"+
+    "<div class='det-price-row'><span class='det-price'>"+p.price.toLocaleString()+"</span><span class='det-price-unit'>₪</span></div>"+
+    "<div class='det-eilat-note'>✔ "+ui.eilatNote+"</div>"+
+    "<div class='det-desc'>"+tl(p.desc)+"</div>"+
+    "<div class='spec-chips'>"+
+      "<div class='spec-chip'><span>"+ui.sType+"</span> "+tLbl(p.type)+"</div>"+
+      "<div class='spec-chip'><span>"+ui.sSuc+"</span> "+p.suc+"</div>"+
+      "<div class='spec-chip'><span>"+ui.sWt+"</span> "+p.wt+"</div>"+
+      "<div class='spec-chip'><span>"+ui.sFlt+"</span> "+p.flt+"</div>"+
+      "<div class='spec-chip'><span>"+ui.sNs+"</span> "+p.ns+"</div>"+
+      "<div class='spec-chip'><span>"+ui.sRt+"</span> "+p.rt+"</div>"+
+    "</div>";
+  var spH=p.specs.map(function(r){return "<tr><td>"+r[0]+"</td><td>"+r[1]+"</td></tr>";}).join("");
+  var ftH=tl(p.feat).map(function(f){return "<li>"+f+"</li>";}).join("");
+  u("detDeep").innerHTML=
+    "<div class='det-section-title'>"+ui.specTitle+"</div>"+
+    "<table class='spec-table'>"+spH+"</table>"+
+    "<div class='det-section-title'>"+ui.featTitle+"</div>"+
+    "<ul class='feat-list'>"+ftH+"</ul>";
+  var bb=u("buyBtn");
+  bb.textContent=ui.buyBtn;
+  bb.onclick=function(){window.open(p.url,"_blank");};
+  goScreen("detailScreen");
+}
+
+document.addEventListener("DOMContentLoaded",function(){
+  u("btnHe").addEventListener("click",function(){setLang("he");});
+  u("btnRu").addEventListener("click",function(){setLang("ru");});
+  u("btnCatalog").addEventListener("click",function(){goScreen("catalogScreen");renderCatalog();});
+  u("btnQuiz").addEventListener("click",function(){startQuiz();});
+  u("catBack").addEventListener("click",function(){goScreen("splashScreen");});
+  u("catLang").addEventListener("click",function(){goScreen("langScreen");});
+  u("quizBack").addEventListener("click",function(){goScreen("splashScreen");});
+  u("quizLang").addEventListener("click",function(){goScreen("langScreen");});
+  u("resBack").addEventListener("click",function(){goScreen("splashScreen");});
+  u("resLang").addEventListener("click",function(){goScreen("langScreen");});
+  u("retryBtn").addEventListener("click",function(){startQuiz();});
+  u("splashLangBtn").addEventListener("click",function(){goScreen("langScreen");});
+});
+</script></body></html>
